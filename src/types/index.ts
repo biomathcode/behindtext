@@ -8,6 +8,12 @@ export interface TextSettings {
   rotation: number;
   x: number;
   y: number;
+  strokeWidth: number;
+  strokeColor: string;
+  shadowBlur: number;
+  shadowColor: string;
+  shadowOffsetX: number;
+  shadowOffsetY: number;
 }
 
 export interface BackgroundSettings {

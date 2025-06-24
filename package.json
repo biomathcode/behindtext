@@ -11,6 +11,7 @@
   },
   "dependencies": {
     "@imgly/background-removal": "^1.4.5",
+    "@sentry/react": "^7.99.0",
     "canvas-record": "^4.1.6",
     "gsap": "^3.12.2",
     "lucide-react": "^0.344.0",

@@ -2,6 +2,7 @@ import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { Upload, Download, Type, Settings, Image as ImageIcon, Video, Play, Pause } from 'lucide-react';
 import { removeBackground } from '@imgly/background-removal';
 import { gsap } from 'gsap';
+import * as Sentry from '@sentry/react';
 import { useVideoExport } from '../hooks/useVideoExport';
 
 interface TextSettings {
@@ -99,21 +100,37 @@ const ImageEditor: React.FC = () => {
   const fontFamilies = ['Arial', 'Helvetica', 'Times New Roman', 'Georgia', 'Verdana', 'Comic Sans MS', 'Impact', 'Trebuchet MS'];
 
   const calculateCanvasDimensions = (image: HTMLImageElement) => {
-    const maxWidth = 800;
-    const maxHeight = 600;
-    
-    let { width, height } = image;
-    
-    const widthRatio = maxWidth / width;
-    const heightRatio = maxHeight / height;
-    const scale = Math.min(widthRatio, heightRatio);
-    
-    if (scale < 1) {
-      width *= scale;
-      height *= scale;
-    }
-    
-    return { width: Math.round(width), height: Math.round(height) };
+    return Sentry.startSpan(
+      {
+        op: "function.call",
+        name: "Calculate Canvas Dimensions",
+      },
+      (span) => {
+        const maxWidth = 800;
+        const maxHeight = 600;
+        
+        let { width, height } = image;
+        
+        span.setAttribute("original.width", width);
+        span.setAttribute("original.height", height);
+        
+        const widthRatio = maxWidth / width;
+        const heightRatio = maxHeight / height;
+        const scale = Math.min(widthRatio, heightRatio);
+        
+        if (scale < 1) {
+          width *= scale;
+          height *= scale;
+        }
+        
+        const dimensions = { width: Math.round(width), height: Math.round(height) };
+        span.setAttribute("calculated.width", dimensions.width);
+        span.setAttribute("calculated.height", dimensions.height);
+        span.setAttribute("scale", scale);
+        
+        return dimensions;
+      }
+    );
   };
 
   const applyImageFilters = (ctx: CanvasRenderingContext2D, image: HTMLImageElement) => {
@@ -132,66 +149,79 @@ const ImageEditor: React.FC = () => {
   };
 
   const drawCanvas = useCallback(() => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
+    return Sentry.startSpan(
+      {
+        op: "canvas.draw",
+        name: "Draw Canvas Layers",
+      },
+      (span) => {
+        const canvas = canvasRef.current;
+        if (!canvas) return;
 
-    const ctx = canvas.getContext('2d');
-    if (!ctx) return;
+        const ctx = canvas.getContext('2d');
+        if (!ctx) return;
 
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-    // Layer 1: Original image (background) with filters
-    if (layerData.originalImage) {
-      applyImageFilters(ctx, layerData.originalImage);
-    }
+        // Layer 1: Original image (background) with filters
+        if (layerData.originalImage) {
+          span.setAttribute("has.background", true);
+          applyImageFilters(ctx, layerData.originalImage);
+        }
 
-    // Layer 2: Text with animation (only if video tab is active and animation is playing)
-    if (layerData.textSettings.text) {
-      ctx.save();
-      
-      let textOpacity = layerData.textSettings.opacity / 100;
-      let textScale = 1;
-      
-      if (editSubTab === 'video' && isAnimationPlaying) {
-        textOpacity *= animatedTextProps.opacity;
-        textScale = animatedTextProps.scale;
+        // Layer 2: Text with animation (only if video tab is active and animation is playing)
+        if (layerData.textSettings.text) {
+          span.setAttribute("has.text", true);
+          span.setAttribute("text.length", layerData.textSettings.text.length);
+          
+          ctx.save();
+          
+          let textOpacity = layerData.textSettings.opacity / 100;
+          let textScale = 1;
+          
+          if (editSubTab === 'video' && isAnimationPlaying) {
+            textOpacity *= animatedTextProps.opacity;
+            textScale = animatedTextProps.scale;
+          }
+          
+          const fontSize = layerData.textSettings.fontSize * textScale;
+          ctx.font = `${layerData.textSettings.fontWeight} ${fontSize}px ${layerData.textSettings.fontFamily}`;
+          ctx.fillStyle = layerData.textSettings.color;
+          ctx.globalAlpha = textOpacity;
+          ctx.textAlign = 'center';
+          ctx.textBaseline = 'middle';
+
+          const x = (layerData.textSettings.x / 100) * canvas.width;
+          const y = (layerData.textSettings.y / 100) * canvas.height;
+
+          ctx.translate(x, y);
+          ctx.rotate((layerData.textSettings.rotation * Math.PI) / 180);
+          
+          if (layerData.textSettings.shadowBlur > 0) {
+            ctx.shadowColor = layerData.textSettings.shadowColor;
+            ctx.shadowBlur = layerData.textSettings.shadowBlur;
+            ctx.shadowOffsetX = layerData.textSettings.shadowOffsetX;
+            ctx.shadowOffsetY = layerData.textSettings.shadowOffsetY;
+          }
+          
+          if (layerData.textSettings.strokeWidth > 0) {
+            ctx.strokeStyle = layerData.textSettings.strokeColor;
+            ctx.lineWidth = layerData.textSettings.strokeWidth;
+            ctx.strokeText(layerData.textSettings.text, 0, 0);
+          }
+          
+          ctx.fillText(layerData.textSettings.text, 0, 0);
+          
+          ctx.restore();
+        }
+
+        // Layer 3: Background-removed image (foreground)
+        if (layerData.backgroundRemovedImage) {
+          span.setAttribute("has.foreground", true);
+          ctx.drawImage(layerData.backgroundRemovedImage, 0, 0, canvas.width, canvas.height);
+        }
       }
-      
-      const fontSize = layerData.textSettings.fontSize * textScale;
-      ctx.font = `${layerData.textSettings.fontWeight} ${fontSize}px ${layerData.textSettings.fontFamily}`;
-      ctx.fillStyle = layerData.textSettings.color;
-      ctx.globalAlpha = textOpacity;
-      ctx.textAlign = 'center';
-      ctx.textBaseline = 'middle';
-
-      const x = (layerData.textSettings.x / 100) * canvas.width;
-      const y = (layerData.textSettings.y / 100) * canvas.height;
-
-      ctx.translate(x, y);
-      ctx.rotate((layerData.textSettings.rotation * Math.PI) / 180);
-      
-      if (layerData.textSettings.shadowBlur > 0) {
-        ctx.shadowColor = layerData.textSettings.shadowColor;
-        ctx.shadowBlur = layerData.textSettings.shadowBlur;
-        ctx.shadowOffsetX = layerData.textSettings.shadowOffsetX;
-        ctx.shadowOffsetY = layerData.textSettings.shadowOffsetY;
-      }
-      
-      if (layerData.textSettings.strokeWidth > 0) {
-        ctx.strokeStyle = layerData.textSettings.strokeColor;
-        ctx.lineWidth = layerData.textSettings.strokeWidth;
-        ctx.strokeText(layerData.textSettings.text, 0, 0);
-      }
-      
-      ctx.fillText(layerData.textSettings.text, 0, 0);
-      
-      ctx.restore();
-    }
-
-    // Layer 3: Background-removed image (foreground)
-    if (layerData.backgroundRemovedImage) {
-      ctx.drawImage(layerData.backgroundRemovedImage, 0, 0, canvas.width, canvas.height);
-    }
+    );
   }, [layerData, canvasDimensions, animatedTextProps, editSubTab, isAnimationPlaying]);
 
   useEffect(() => {
@@ -221,62 +251,90 @@ const ImageEditor: React.FC = () => {
   }, [layerData.videoSettings.animationType, layerData.videoSettings.animationDuration, layerData.videoSettings.easing]);
 
   const createAnimation = () => {
-    if (animationRef.current) {
-      animationRef.current.kill();
-    }
+    return Sentry.startSpan(
+      {
+        op: "animation.create",
+        name: "Create Text Animation",
+      },
+      (span) => {
+        if (animationRef.current) {
+          animationRef.current.kill();
+        }
 
-    const tl = gsap.timeline({
-      repeat: -1,
-      yoyo: layerData.videoSettings.animationType.includes('fade'),
-      onUpdate: () => {
-        setAnimatedTextProps({
-          opacity: tl.getById('textOpacity')?.progress() !== undefined ? 
-            gsap.getProperty(tl.getById('textOpacity'), 'opacity') as number : 1,
-          scale: tl.getById('textScale')?.progress() !== undefined ? 
-            gsap.getProperty(tl.getById('textScale'), 'scale') as number : 1,
+        span.setAttribute("animation.type", layerData.videoSettings.animationType);
+        span.setAttribute("animation.duration", layerData.videoSettings.animationDuration);
+        span.setAttribute("animation.easing", layerData.videoSettings.easing);
+
+        const tl = gsap.timeline({
+          repeat: -1,
+          yoyo: layerData.videoSettings.animationType.includes('fade'),
+          onUpdate: () => {
+            setAnimatedTextProps({
+              opacity: tl.getById('textOpacity')?.progress() !== undefined ? 
+                gsap.getProperty(tl.getById('textOpacity'), 'opacity') as number : 1,
+              scale: tl.getById('textScale')?.progress() !== undefined ? 
+                gsap.getProperty(tl.getById('textScale'), 'scale') as number : 1,
+            });
+          }
         });
+
+        const duration = layerData.videoSettings.animationDuration;
+        const easing = layerData.videoSettings.easing;
+
+        switch (layerData.videoSettings.animationType) {
+          case 'fade-in':
+            tl.fromTo({}, { duration }, { opacity: 1, ease: easing, id: 'textOpacity' });
+            setAnimatedTextProps({ opacity: 0, scale: 1 });
+            break;
+          case 'fade-out':
+            tl.fromTo({}, { duration }, { opacity: 0, ease: easing, id: 'textOpacity' });
+            setAnimatedTextProps({ opacity: 1, scale: 1 });
+            break;
+          case 'zoom-in':
+            tl.fromTo({}, { duration }, { scale: 1, ease: easing, id: 'textScale' });
+            setAnimatedTextProps({ opacity: 1, scale: 0.1 });
+            break;
+          case 'zoom-out':
+            tl.fromTo({}, { duration }, { scale: 0.1, ease: easing, id: 'textScale' });
+            setAnimatedTextProps({ opacity: 1, scale: 1 });
+            break;
+        }
+
+        animationRef.current = tl;
+        return tl;
       }
-    });
-
-    const duration = layerData.videoSettings.animationDuration;
-    const easing = layerData.videoSettings.easing;
-
-    switch (layerData.videoSettings.animationType) {
-      case 'fade-in':
-        tl.fromTo({}, { duration }, { opacity: 1, ease: easing, id: 'textOpacity' });
-        setAnimatedTextProps({ opacity: 0, scale: 1 });
-        break;
-      case 'fade-out':
-        tl.fromTo({}, { duration }, { opacity: 0, ease: easing, id: 'textOpacity' });
-        setAnimatedTextProps({ opacity: 1, scale: 1 });
-        break;
-      case 'zoom-in':
-        tl.fromTo({}, { duration }, { scale: 1, ease: easing, id: 'textScale' });
-        setAnimatedTextProps({ opacity: 1, scale: 0.1 });
-        break;
-      case 'zoom-out':
-        tl.fromTo({}, { duration }, { scale: 0.1, ease: easing, id: 'textScale' });
-        setAnimatedTextProps({ opacity: 1, scale: 1 });
-        break;
-    }
-
-    animationRef.current = tl;
-    return tl;
+    );
   };
 
   const playAnimation = () => {
-    if (editSubTab !== 'video') return;
-    
-    const tl = createAnimation();
-    tl.play();
-    setIsAnimationPlaying(true);
+    Sentry.startSpan(
+      {
+        op: "ui.click",
+        name: "Play Animation Button Click",
+      },
+      () => {
+        if (editSubTab !== 'video') return;
+        
+        const tl = createAnimation();
+        tl.play();
+        setIsAnimationPlaying(true);
+      }
+    );
   };
 
   const pauseAnimation = () => {
-    if (animationRef.current) {
-      animationRef.current.pause();
-    }
-    setIsAnimationPlaying(false);
+    Sentry.startSpan(
+      {
+        op: "ui.click",
+        name: "Pause Animation Button Click",
+      },
+      () => {
+        if (animationRef.current) {
+          animationRef.current.pause();
+        }
+        setIsAnimationPlaying(false);
+      }
+    );
   };
 
   const stopAnimation = () => {
@@ -288,66 +346,141 @@ const ImageEditor: React.FC = () => {
   };
 
   const handleImageUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (!file) return;
+    return Sentry.startSpan(
+      {
+        op: "image.upload",
+        name: "Image Upload and Background Removal",
+      },
+      async (span) => {
+        const file = event.target.files?.[0];
+        if (!file) return;
 
-    setIsProcessing(true);
+        span.setAttribute("file.size", file.size);
+        span.setAttribute("file.type", file.type);
+        span.setAttribute("file.name", file.name);
 
-    try {
-      const originalImage = new Image();
-      originalImage.onload = async () => {
-        const dimensions = calculateCanvasDimensions(originalImage);
-        setCanvasDimensions(dimensions);
+        setIsProcessing(true);
 
-        const blob = await removeBackground(file);
-        const backgroundRemovedImage = new Image();
-        backgroundRemovedImage.onload = () => {
-          setLayerData(prev => ({
-            ...prev,
-            originalImage,
-            backgroundRemovedImage
-          }));
+        try {
+          const originalImage = new Image();
+          originalImage.onload = async () => {
+            try {
+              const dimensions = calculateCanvasDimensions(originalImage);
+              setCanvasDimensions(dimensions);
+
+              span.setAttribute("processing.stage", "background_removal");
+              const blob = await removeBackground(file);
+              
+              const backgroundRemovedImage = new Image();
+              backgroundRemovedImage.onload = () => {
+                setLayerData(prev => ({
+                  ...prev,
+                  originalImage,
+                  backgroundRemovedImage
+                }));
+                setIsProcessing(false);
+                setActiveTab('edit');
+                span.setAttribute("processing.success", true);
+              };
+              backgroundRemovedImage.onerror = (error) => {
+                Sentry.captureException(new Error('Failed to load background-removed image'));
+                setIsProcessing(false);
+              };
+              backgroundRemovedImage.src = URL.createObjectURL(blob);
+            } catch (error) {
+              Sentry.captureException(error);
+              setIsProcessing(false);
+              span.setAttribute("processing.success", false);
+            }
+          };
+          originalImage.onerror = (error) => {
+            Sentry.captureException(new Error('Failed to load original image'));
+            setIsProcessing(false);
+          };
+          originalImage.src = URL.createObjectURL(file);
+        } catch (error) {
+          Sentry.captureException(error);
           setIsProcessing(false);
-          setActiveTab('edit');
-        };
-        backgroundRemovedImage.src = URL.createObjectURL(blob);
-      };
-      originalImage.src = URL.createObjectURL(file);
-    } catch (error) {
-      console.error('Error processing image:', error);
-      setIsProcessing(false);
-    }
+          span.setAttribute("processing.success", false);
+        }
+      }
+    );
   };
 
   const updateTextSettings = (updates: Partial<TextSettings>) => {
-    setLayerData(prev => ({
-      ...prev,
-      textSettings: { ...prev.textSettings, ...updates }
-    }));
+    Sentry.startSpan(
+      {
+        op: "ui.update",
+        name: "Update Text Settings",
+      },
+      (span) => {
+        span.setAttribute("updates", Object.keys(updates).join(', '));
+        setLayerData(prev => ({
+          ...prev,
+          textSettings: { ...prev.textSettings, ...updates }
+        }));
+      }
+    );
   };
 
   const updateBackgroundSettings = (updates: Partial<BackgroundSettings>) => {
-    setLayerData(prev => ({
-      ...prev,
-      backgroundSettings: { ...prev.backgroundSettings, ...updates }
-    }));
+    Sentry.startSpan(
+      {
+        op: "ui.update",
+        name: "Update Background Settings",
+      },
+      (span) => {
+        span.setAttribute("updates", Object.keys(updates).join(', '));
+        setLayerData(prev => ({
+          ...prev,
+          backgroundSettings: { ...prev.backgroundSettings, ...updates }
+        }));
+      }
+    );
   };
 
   const updateVideoSettings = (updates: Partial<VideoSettings>) => {
-    setLayerData(prev => ({
-      ...prev,
-      videoSettings: { ...prev.videoSettings, ...updates }
-    }));
+    Sentry.startSpan(
+      {
+        op: "ui.update",
+        name: "Update Video Settings",
+      },
+      (span) => {
+        span.setAttribute("updates", Object.keys(updates).join(', '));
+        setLayerData(prev => ({
+          ...prev,
+          videoSettings: { ...prev.videoSettings, ...updates }
+        }));
+      }
+    );
   };
 
   const downloadImage = (format: 'png' | 'jpeg') => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
+    Sentry.startSpan(
+      {
+        op: "export.image",
+        name: "Download Image",
+      },
+      (span) => {
+        const canvas = canvasRef.current;
+        if (!canvas) return;
 
-    const link = document.createElement('a');
-    link.download = `behindtext-effect.${format}`;
-    link.href = canvas.toDataURL(`image/${format}`, format === 'jpeg' ? 0.9 : undefined);
-    link.click();
+        span.setAttribute("export.format", format);
+        span.setAttribute("canvas.width", canvas.width);
+        span.setAttribute("canvas.height", canvas.height);
+
+        try {
+          const link = document.createElement('a');
+          link.download = `behindtext-effect.${format}`;
+          link.href = canvas.toDataURL(`image/${format}`, format === 'jpeg' ? 0.9 : undefined);
+          link.click();
+          span.setAttribute("export.success", true);
+        } catch (error) {
+          Sentry.captureException(error);
+          span.setAttribute("export.success", false);
+        }
+      }
+    );
   };
 
   return (
@@ -690,7 +823,7 @@ const ImageEditor: React.FC = () => {
                           />
                         </div>
 
-                        {/* Color */}
+                        {/* Text Color */}
                         <div className="space-y-3">
                           <label className="block text-sm font-medium text-gray-200">Text Color</label>
                           <div className="flex gap-3">
@@ -706,6 +839,41 @@ const ImageEditor: React.FC = () => {
                               onChange={(e) => updateTextSettings({ color: e.target.value })}
                               className="flex-1 px-4 py-3 bg-black/20 border border-white/20 rounded-xl text-white backdrop-blur-sm focus:border-blue-400/50 focus:outline-none transition-colors"
                               placeholder="#ffffff"
+                            />
+                          </div>
+                        </div>
+
+                        {/* Text Stroke */}
+                        <div className="space-y-3">
+                          <label className="block text-sm font-medium text-gray-200">
+                            Stroke Width: <span className="text-blue-400">{layerData.textSettings.strokeWidth}px</span>
+                          </label>
+                          <input
+                            type="range"
+                            min="0"
+                            max="10"
+                            value={layerData.textSettings.strokeWidth}
+                            onChange={(e) => updateTextSettings({ strokeWidth: parseInt(e.target.value) })}
+                            className="w-full h-2 bg-black/20 rounded-lg appearance-none cursor-pointer slider"
+                          />
+                        </div>
+
+                        {/* Stroke Color */}
+                        <div className="space-y-3">
+                          <label className="block text-sm font-medium text-gray-200">Stroke Color</label>
+                          <div className="flex gap-3">
+                            <input
+                              type="color"
+                              value={layerData.textSettings.strokeColor}
+                              onChange={(e) => updateTextSettings({ strokeColor: e.target.value })}
+                              className="w-12 h-12 rounded-lg border border-white/20 bg-black/20 cursor-pointer"
+                            />
+                            <input
+                              type="text"
+                              value={layerData.textSettings.strokeColor}
+                              onChange={(e) => updateTextSettings({ strokeColor: e.target.value })}
+                              className="flex-1 px-4 py-3 bg-black/20 border border-white/20 rounded-xl text-white backdrop-blur-sm focus:border-blue-400/50 focus:outline-none transition-colors"
+                              placeholder="#000000"
                             />
                           </div>
                         </div>

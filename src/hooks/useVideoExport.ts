@@ -1,6 +1,7 @@
 import { useState, useRef } from 'react';
 import { gsap } from 'gsap';
 import { Recorder, RecorderStatus } from 'canvas-record';
+import * as Sentry from '@sentry/react';
 import { LayerData } from '../types';
 
 interface UseVideoExportProps {
@@ -80,123 +81,140 @@ export const useVideoExport = ({ layerData, canvasDimensions }: UseVideoExportPr
   };
 
   const downloadVideo = async () => {
-    if (!layerData.originalImage) return;
+    return Sentry.startSpan(
+      {
+        op: "export.video",
+        name: "Download Animated Video",
+      },
+      async (span) => {
+        if (!layerData.originalImage) return;
 
-    setIsExporting(true);
+        span.setAttribute("video.duration", layerData.videoSettings.videoDuration);
+        span.setAttribute("video.animation", layerData.videoSettings.animationType);
+        span.setAttribute("canvas.width", canvasDimensions.width);
+        span.setAttribute("canvas.height", canvasDimensions.height);
 
-    try {
-      // Create a new canvas for recording
-      if (!recordingCanvasRef.current) {
-        recordingCanvasRef.current = document.createElement('canvas');
-      }
+        setIsExporting(true);
 
-      const recordingCanvas = recordingCanvasRef.current;
-      recordingCanvas.width = canvasDimensions.width;
-      recordingCanvas.height = canvasDimensions.height;
-      
-      const ctx = recordingCanvas.getContext('2d');
-      if (!ctx) return;
+        try {
+          // Create a new canvas for recording
+          if (!recordingCanvasRef.current) {
+            recordingCanvasRef.current = document.createElement('canvas');
+          }
 
-      // Initialize canvas-record with proper options
-      const recorder = new Recorder(ctx, {
-        name: 'animated-text-video',
-        encoderOptions: {
-          codec: 'avc1.42E01E', // H.264 baseline profile
-        },
-      });
+          const recordingCanvas = recordingCanvasRef.current;
+          recordingCanvas.width = canvasDimensions.width;
+          recordingCanvas.height = canvasDimensions.height;
+          
+          const ctx = recordingCanvas.getContext('2d');
+          if (!ctx) return;
 
-      recorderRef.current = recorder;
+          // Initialize canvas-record with proper options
+          const recorder = new Recorder(ctx, {
+            name: 'animated-text-video',
+            encoderOptions: {
+              codec: 'avc1.42E01E', // H.264 baseline profile
+            },
+          });
 
-      const animationObj = { opacity: 1, scale: 1 };
-      const { animationType, animationDuration, easing, videoDuration } = layerData.videoSettings;
+          recorderRef.current = recorder;
 
-      // Set initial values based on animation type
-      switch (animationType) {
-        case 'fade-in':
-          animationObj.opacity = 0;
-          break;
-        case 'fade-out':
-          animationObj.opacity = 1;
-          break;
-        case 'zoom-in':
-          animationObj.scale = 0.1;
-          break;
-        case 'zoom-out':
-          animationObj.scale = 1;
-          break;
-      }
+          const animationObj = { opacity: 1, scale: 1 };
+          const { animationType, animationDuration, easing, videoDuration } = layerData.videoSettings;
 
-      // Start recording
-      await recorder.start();
+          // Set initial values based on animation type
+          switch (animationType) {
+            case 'fade-in':
+              animationObj.opacity = 0;
+              break;
+            case 'fade-out':
+              animationObj.opacity = 1;
+              break;
+            case 'zoom-in':
+              animationObj.scale = 0.1;
+              break;
+            case 'zoom-out':
+              animationObj.scale = 1;
+              break;
+          }
 
-      // Animation tick function
-      const tick = async () => {
-        drawFrame(ctx, animationObj.opacity, animationObj.scale);
+          // Start recording
+          await recorder.start();
+          span.setAttribute("recording.started", true);
 
-        if (recorder.status !== RecorderStatus.Recording) return;
-        
-        await recorder.step();
+          // Animation tick function
+          const tick = async () => {
+            drawFrame(ctx, animationObj.opacity, animationObj.scale);
 
-        if (recorder.status !== RecorderStatus.Stopped) {
-          requestAnimationFrame(tick);
-        }
-      };
+            if (recorder.status !== RecorderStatus.Recording) return;
+            
+            await recorder.step();
 
-      // Create GSAP timeline
-      const timeline = gsap.timeline({
-        onUpdate: () => {
-          // The actual drawing happens in the tick function
-        },
-        onComplete: async () => {
-          // Stop recording after animation completes
-          setTimeout(async () => {
-            if (recorderRef.current && recorderRef.current.status === RecorderStatus.Recording) {
-              await recorderRef.current.stop();
+            if (recorder.status !== RecorderStatus.Stopped) {
+              requestAnimationFrame(tick);
             }
-            setIsExporting(false);
-          }, 100);
+          };
+
+          // Create GSAP timeline
+          const timeline = gsap.timeline({
+            onUpdate: () => {
+              // The actual drawing happens in the tick function
+            },
+            onComplete: async () => {
+              // Stop recording after animation completes
+              setTimeout(async () => {
+                if (recorderRef.current && recorderRef.current.status === RecorderStatus.Recording) {
+                  await recorderRef.current.stop();
+                  span.setAttribute("recording.completed", true);
+                }
+                setIsExporting(false);
+              }, 100);
+            }
+          });
+
+          // Add animation
+          const targetValues: any = {};
+          switch (animationType) {
+            case 'fade-in':
+              targetValues.opacity = 1;
+              break;
+            case 'fade-out':
+              targetValues.opacity = 0;
+              break;
+            case 'zoom-in':
+              targetValues.scale = 1;
+              break;
+            case 'zoom-out':
+              targetValues.scale = 0.1;
+              break;
+          }
+
+          timeline.to(animationObj, {
+            duration: animationDuration,
+            ease: easing,
+            ...targetValues
+          });
+
+          // Hold the final state for the remaining duration
+          const remainingDuration = videoDuration - animationDuration;
+          if (remainingDuration > 0) {
+            timeline.to(animationObj, {
+              duration: remainingDuration,
+              ease: 'none'
+            });
+          }
+
+          // Start the animation and recording loop
+          tick();
+          span.setAttribute("export.success", true);
+
+        } catch (error) {
+          Sentry.captureException(error);
+          setIsExporting(false);
+          span.setAttribute("export.success", false);
         }
-      });
-
-      // Add animation
-      const targetValues: any = {};
-      switch (animationType) {
-        case 'fade-in':
-          targetValues.opacity = 1;
-          break;
-        case 'fade-out':
-          targetValues.opacity = 0;
-          break;
-        case 'zoom-in':
-          targetValues.scale = 1;
-          break;
-        case 'zoom-out':
-          targetValues.scale = 0.1;
-          break;
       }
-
-      timeline.to(animationObj, {
-        duration: animationDuration,
-        ease: easing,
-        ...targetValues
-      });
-
-      // Hold the final state for the remaining duration
-      const remainingDuration = videoDuration - animationDuration;
-      if (remainingDuration > 0) {
-        timeline.to(animationObj, {
-          duration: remainingDuration,
-          ease: 'none'
-        });
-      }
-
-      // Start the animation and recording loop
-      tick();
-
-    } catch (error) {
-      console.error('Error exporting video:', error);
-      setIsExporting(false);
-    }
+    );
   };
 
   return { isExporting, downloadVideo };
