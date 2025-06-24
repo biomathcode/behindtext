@@ -1,19 +1,22 @@
 import React from 'react';
-import { EditSubTabType, TextSettings, BackgroundSettings, VideoSettings } from '../types';
+import { TextSettings, BackgroundSettings, VideoSettings } from '../types';
 import EditSubTabNavigation from './EditSubTabNavigation';
 import TextControls from './TextControls';
 import BackgroundControls from './BackgroundControls';
 import VideoControls from './VideoControls';
 
 interface EditTabProps {
-  editSubTab: EditSubTabType;
-  setEditSubTab: (tab: EditSubTabType) => void;
+  editSubTab: 'text' | 'background' | 'video';
+  setEditSubTab: (tab: 'text' | 'background' | 'video') => void;
   textSettings: TextSettings;
   backgroundSettings: BackgroundSettings;
   videoSettings: VideoSettings;
   onUpdateText: (updates: Partial<TextSettings>) => void;
   onUpdateBackground: (updates: Partial<BackgroundSettings>) => void;
   onUpdateVideo: (updates: Partial<VideoSettings>) => void;
+  isAnimationPlaying: boolean;
+  playAnimation: () => void;
+  pauseAnimation: () => void;
 }
 
 const EditTab: React.FC<EditTabProps> = ({
@@ -24,7 +27,10 @@ const EditTab: React.FC<EditTabProps> = ({
   videoSettings,
   onUpdateText,
   onUpdateBackground,
-  onUpdateVideo
+  onUpdateVideo,
+  isAnimationPlaying,
+  playAnimation,
+  pauseAnimation
 }) => {
   return (
     <div className="space-y-6">
@@ -41,7 +47,13 @@ const EditTab: React.FC<EditTabProps> = ({
       )}
 
       {editSubTab === 'video' && (
-        <VideoControls videoSettings={videoSettings} onUpdate={onUpdateVideo} />
+        <VideoControls 
+          videoSettings={videoSettings} 
+          onUpdate={onUpdateVideo} 
+          isAnimationPlaying={isAnimationPlaying}
+          playAnimation={playAnimation}
+          pauseAnimation={pauseAnimation}
+        />
       )}
     </div>
   );

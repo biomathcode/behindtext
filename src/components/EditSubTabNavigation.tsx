@@ -1,10 +1,9 @@
 import React from 'react';
 import { Type, Image as ImageIcon, Video } from 'lucide-react';
-import { EditSubTabType } from '../types';
 
 interface EditSubTabNavigationProps {
-  editSubTab: EditSubTabType;
-  setEditSubTab: (tab: EditSubTabType) => void;
+  editSubTab: 'text' | 'background' | 'video';
+  setEditSubTab: (tab: 'text' | 'background' | 'video') => void;
 }
 
 const EditSubTabNavigation: React.FC<EditSubTabNavigationProps> = ({

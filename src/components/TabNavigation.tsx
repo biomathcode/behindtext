@@ -1,10 +1,9 @@
 import React from 'react';
 import { Upload, Download, Settings } from 'lucide-react';
-import { TabType } from '../types';
 
 interface TabNavigationProps {
-  activeTab: TabType;
-  setActiveTab: (tab: TabType) => void;
+  activeTab: 'upload' | 'edit' | 'export';
+  setActiveTab: (tab: 'upload' | 'edit' | 'export') => void;
   hasImage: boolean;
 }
 

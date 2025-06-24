@@ -20,12 +20,13 @@ export interface BackgroundSettings {
   brightness: number;
   contrast: number;
   blur: number;
+  saturation: number;
 }
 
 export interface VideoSettings {
   animationType: 'fade-in' | 'fade-out' | 'zoom-in' | 'zoom-out';
-  duration: number;
-  easing: 'ease-in' | 'ease-out' | 'ease-in-out';
+  animationDuration: number;
+  easing: 'ease-in' | 'ease-out' | 'ease-in-out' | 'linear';
   videoDuration: number;
 }
 

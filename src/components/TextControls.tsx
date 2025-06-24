@@ -132,6 +132,104 @@ const TextControls: React.FC<TextControlsProps> = ({ textSettings, onUpdate }) =
         </div>
       </div>
 
+      {/* Stroke */}
+      <div className="space-y-3">
+        <label className="block text-sm font-medium text-gray-200">
+          Stroke Width: <span className="text-blue-400">{textSettings.strokeWidth}px</span>
+        </label>
+        <input
+          type="range"
+          min="0"
+          max="10"
+          value={textSettings.strokeWidth}
+          onChange={(e) => onUpdate({ strokeWidth: parseInt(e.target.value) })}
+          className="w-full h-2 bg-black/20 rounded-lg appearance-none cursor-pointer slider"
+        />
+      </div>
+
+      {/* Stroke Color */}
+      <div className="space-y-3">
+        <label className="block text-sm font-medium text-gray-200">Stroke Color</label>
+        <div className="flex gap-3">
+          <input
+            type="color"
+            value={textSettings.strokeColor}
+            onChange={(e) => onUpdate({ strokeColor: e.target.value })}
+            className="w-12 h-12 bg-black/20 border border-white/20 rounded-xl cursor-pointer"
+          />
+          <input
+            type="text"
+            value={textSettings.strokeColor}
+            onChange={(e) => onUpdate({ strokeColor: e.target.value })}
+            className="flex-1 px-4 py-3 bg-black/20 border border-white/20 rounded-xl text-white backdrop-blur-sm focus:border-blue-400/50 focus:outline-none transition-colors"
+          />
+        </div>
+      </div>
+
+      {/* Shadow */}
+      <div className="space-y-3">
+        <label className="block text-sm font-medium text-gray-200">
+          Shadow Blur: <span className="text-blue-400">{textSettings.shadowBlur}px</span>
+        </label>
+        <input
+          type="range"
+          min="0"
+          max="20"
+          value={textSettings.shadowBlur}
+          onChange={(e) => onUpdate({ shadowBlur: parseInt(e.target.value) })}
+          className="w-full h-2 bg-black/20 rounded-lg appearance-none cursor-pointer slider"
+        />
+      </div>
+
+      {/* Shadow Color */}
+      <div className="space-y-3">
+        <label className="block text-sm font-medium text-gray-200">Shadow Color</label>
+        <div className="flex gap-3">
+          <input
+            type="color"
+            value={textSettings.shadowColor}
+            onChange={(e) => onUpdate({ shadowColor: e.target.value })}
+            className="w-12 h-12 bg-black/20 border border-white/20 rounded-xl cursor-pointer"
+          />
+          <input
+            type="text"
+            value={textSettings.shadowColor}
+            onChange={(e) => onUpdate({ shadowColor: e.target.value })}
+            className="flex-1 px-4 py-3 bg-black/20 border border-white/20 rounded-xl text-white backdrop-blur-sm focus:border-blue-400/50 focus:outline-none transition-colors"
+          />
+        </div>
+      </div>
+
+      {/* Shadow Offset */}
+      <div className="grid grid-cols-2 gap-4">
+        <div className="space-y-3">
+          <label className="block text-sm font-medium text-gray-200">
+            Shadow X: <span className="text-blue-400">{textSettings.shadowOffsetX}px</span>
+          </label>
+          <input
+            type="range"
+            min="-20"
+            max="20"
+            value={textSettings.shadowOffsetX}
+            onChange={(e) => onUpdate({ shadowOffsetX: parseInt(e.target.value) })}
+            className="w-full h-2 bg-black/20 rounded-lg appearance-none cursor-pointer slider"
+          />
+        </div>
+        <div className="space-y-3">
+          <label className="block text-sm font-medium text-gray-200">
+            Shadow Y: <span className="text-blue-400">{textSettings.shadowOffsetY}px</span>
+          </label>
+          <input
+            type="range"
+            min="-20"
+            max="20"
+            value={textSettings.shadowOffsetY}
+            onChange={(e) => onUpdate({ shadowOffsetY: parseInt(e.target.value) })}
+            className="w-full h-2 bg-black/20 rounded-lg appearance-none cursor-pointer slider"
+          />
+        </div>
+      </div>
+
       {/* Rotation */}
       <div className="space-y-3">
         <label className="block text-sm font-medium text-gray-200">

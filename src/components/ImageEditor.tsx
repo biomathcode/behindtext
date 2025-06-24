@@ -1,55 +1,26 @@
-import React, { useState, useRef, useEffect, useCallback } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { Upload, Download, Type, Settings, Image as ImageIcon, Video, Play, Pause } from 'lucide-react';
-import { removeBackground } from '@imgly/background-removal';
-import { gsap } from 'gsap';
-import * as Sentry from '@sentry/react';
+import { useImageProcessing } from '../hooks/useImageProcessing';
 import { useVideoExport } from '../hooks/useVideoExport';
-
-interface TextSettings {
-  text: string;
-  fontSize: number;
-  fontWeight: number;
-  fontFamily: string;
-  color: string;
-  opacity: number;
-  rotation: number;
-  x: number;
-  y: number;
-  strokeWidth: number;
-  strokeColor: string;
-  shadowBlur: number;
-  shadowColor: string;
-  shadowOffsetX: number;
-  shadowOffsetY: number;
-}
-
-interface BackgroundSettings {
-  brightness: number;
-  contrast: number;
-  blur: number;
-  saturation: number;
-}
-
-interface VideoSettings {
-  animationType: 'fade-in' | 'fade-out' | 'zoom-in' | 'zoom-out';
-  animationDuration: number;
-  easing: 'ease-in' | 'ease-out' | 'ease-in-out' | 'linear';
-  videoDuration: number;
-}
-
-interface LayerData {
-  originalImage: HTMLImageElement | null;
-  backgroundRemovedImage: HTMLImageElement | null;
-  textSettings: TextSettings;
-  backgroundSettings: BackgroundSettings;
-  videoSettings: VideoSettings;
-}
+import { LayerData } from '../types';
+import CanvasPreview from './CanvasPreview';
+import TabNavigation from './TabNavigation';
+import UploadTab from './UploadTab';
+import EditTab from './EditTab';
+import ExportTab from './ExportTab';
 
 const ImageEditor: React.FC = () => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [activeTab, setActiveTab] = useState<'upload' | 'edit' | 'export'>('upload');
+  const [editSubTab, setEditSubTab] = useState<'text' | 'background' | 'video'>('text');
+  const [canvasDimensions, setCanvasDimensions] = useState({ width: 800, height: 600 });
+  const [isAnimationPlaying, setIsAnimationPlaying] = useState(false);
+  const [animatedTextProps, setAnimatedTextProps] = useState({
+    opacity: 1,
+    scale: 1,
+  });
   const animationRef = useRef<gsap.core.Timeline | null>(null);
-  
+
   const [layerData, setLayerData] = useState<LayerData>({
     originalImage: null,
     backgroundRemovedImage: null,
@@ -84,46 +55,24 @@ const ImageEditor: React.FC = () => {
     }
   });
 
-  const [isProcessing, setIsProcessing] = useState(false);
-  const [activeTab, setActiveTab] = useState<'upload' | 'edit' | 'export'>('upload');
-  const [editSubTab, setEditSubTab] = useState<'text' | 'background' | 'video'>('text');
-  const [canvasDimensions, setCanvasDimensions] = useState({ width: 800, height: 600 });
-  const [isAnimationPlaying, setIsAnimationPlaying] = useState(false);
-  const [animatedTextProps, setAnimatedTextProps] = useState({
-    opacity: 1,
-    scale: 1,
+  // Use custom hooks
+  const { isProcessing, handleImageUpload } = useImageProcessing({
+    setLayerData,
+    setCanvasDimensions,
+    setActiveTab,
   });
 
-  // Use the video export hook
-  const { isExporting, downloadVideo } = useVideoExport({ layerData, canvasDimensions });
-
-  const fontFamilies = ['Arial', 'Helvetica', 'Times New Roman', 'Georgia', 'Verdana', 'Comic Sans MS', 'Impact', 'Trebuchet MS'];
-
-  const calculateCanvasDimensions = (image: HTMLImageElement) => {
-    const maxWidth = 800;
-    const maxHeight = 600;
-    
-    let { width, height } = image;
-    
-    const widthRatio = maxWidth / width;
-    const heightRatio = maxHeight / height;
-    const scale = Math.min(widthRatio, heightRatio);
-    
-    if (scale < 1) {
-      width *= scale;
-      height *= scale;
-    }
-    
-    return { width: Math.round(width), height: Math.round(height) };
-  };
+  const { isExporting, downloadVideo } = useVideoExport({
+    layerData,
+    canvasDimensions,
+  });
 
   const applyImageFilters = (ctx: CanvasRenderingContext2D, image: HTMLImageElement) => {
-    const { brightness, contrast, blur, saturation } = layerData.backgroundSettings;
+    const { brightness, contrast, blur } = layerData.backgroundSettings;
     
     const filters = [
       `brightness(${brightness}%)`,
       `contrast(${contrast}%)`,
-      `saturate(${saturation}%)`,
       blur > 0 ? `blur(${blur}px)` : ''
     ].filter(Boolean).join(' ');
     
@@ -132,7 +81,7 @@ const ImageEditor: React.FC = () => {
     ctx.filter = 'none';
   };
 
-  const drawCanvas = useCallback(() => {
+  const drawCanvas = React.useCallback(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
 
@@ -214,12 +163,29 @@ const ImageEditor: React.FC = () => {
     }
   }, [editSubTab]);
 
-  // Update animation when settings change
-  useEffect(() => {
-    if (isAnimationPlaying && editSubTab === 'video') {
-      createAnimation();
-    }
-  }, [layerData.videoSettings.animationType, layerData.videoSettings.animationDuration, layerData.videoSettings.easing]);
+  // Update text settings
+  const updateTextSettings = (updates: Partial<typeof layerData.textSettings>) => {
+    setLayerData(prev => ({
+      ...prev,
+      textSettings: { ...prev.textSettings, ...updates }
+    }));
+  };
+
+  // Update background settings
+  const updateBackgroundSettings = (updates: Partial<typeof layerData.backgroundSettings>) => {
+    setLayerData(prev => ({
+      ...prev,
+      backgroundSettings: { ...prev.backgroundSettings, ...updates }
+    }));
+  };
+
+  // Update video settings
+  const updateVideoSettings = (updates: Partial<typeof layerData.videoSettings>) => {
+    setLayerData(prev => ({
+      ...prev,
+      videoSettings: { ...prev.videoSettings, ...updates }
+    }));
+  };
 
   const createAnimation = () => {
     if (animationRef.current) {
@@ -288,163 +254,14 @@ const ImageEditor: React.FC = () => {
     setAnimatedTextProps({ opacity: 1, scale: 1 });
   };
 
-  const handleImageUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
-    return Sentry.startSpan(
-      {
-        op: "image.processing",
-        name: "Background Removal Process",
-      },
-      async (span) => {
-        const file = event.target.files?.[0];
-        if (!file) return;
-
-        // Add file metadata to span
-        span.setAttribute("file.size", file.size);
-        span.setAttribute("file.type", file.type);
-        span.setAttribute("file.name", file.name);
-
-        setIsProcessing(true);
-
-        try {
-          const originalImage = new Image();
-          
-          await new Promise<void>((resolve, reject) => {
-            originalImage.onload = async () => {
-              try {
-                // Add image dimensions to span
-                span.setAttribute("image.width", originalImage.width);
-                span.setAttribute("image.height", originalImage.height);
-                span.setAttribute("image.aspectRatio", (originalImage.width / originalImage.height).toFixed(2));
-
-                const dimensions = calculateCanvasDimensions(originalImage);
-                setCanvasDimensions(dimensions);
-
-                // Add canvas dimensions to span
-                span.setAttribute("canvas.width", dimensions.width);
-                span.setAttribute("canvas.height", dimensions.height);
-
-                // Start background removal with nested span
-                await Sentry.startSpan(
-                  {
-                    op: "ai.background_removal",
-                    name: "AI Background Removal",
-                  },
-                  async (bgRemovalSpan) => {
-                    const startTime = performance.now();
-                    
-                    try {
-                      const blob = await removeBackground(file);
-                      
-                      const endTime = performance.now();
-                      const processingTime = endTime - startTime;
-                      
-                      // Add performance metrics
-                      bgRemovalSpan.setAttribute("processing.duration_ms", Math.round(processingTime));
-                      bgRemovalSpan.setAttribute("processing.success", true);
-                      bgRemovalSpan.setAttribute("output.blob_size", blob.size);
-                      bgRemovalSpan.setAttribute("compression.ratio", (blob.size / file.size).toFixed(2));
-
-                      const backgroundRemovedImage = new Image();
-                      backgroundRemovedImage.onload = () => {
-                        setLayerData(prev => ({
-                          ...prev,
-                          originalImage,
-                          backgroundRemovedImage
-                        }));
-                        setIsProcessing(false);
-                        setActiveTab('edit');
-                        
-                        span.setAttribute("processing.success", true);
-                        span.setAttribute("processing.total_duration_ms", Math.round(performance.now() - startTime));
-                        resolve();
-                      };
-                      
-                      backgroundRemovedImage.onerror = () => {
-                        bgRemovalSpan.setAttribute("processing.success", false);
-                        span.setAttribute("processing.success", false);
-                        reject(new Error('Failed to load background-removed image'));
-                      };
-                      
-                      backgroundRemovedImage.src = URL.createObjectURL(blob);
-                    } catch (error) {
-                      bgRemovalSpan.setAttribute("processing.success", false);
-                      bgRemovalSpan.setAttribute("error.message", error instanceof Error ? error.message : 'Unknown error');
-                      throw error;
-                    }
-                  }
-                );
-              } catch (error) {
-                reject(error);
-              }
-            };
-            
-            originalImage.onerror = () => {
-              span.setAttribute("processing.success", false);
-              reject(new Error('Failed to load original image'));
-            };
-            
-            originalImage.src = URL.createObjectURL(file);
-          });
-
-        } catch (error) {
-          console.error('Error processing image:', error);
-          Sentry.captureException(error);
-          span.setAttribute("processing.success", false);
-          span.setAttribute("error.message", error instanceof Error ? error.message : 'Unknown error');
-          setIsProcessing(false);
-        }
-      }
-    );
-  };
-
-  const updateTextSettings = (updates: Partial<TextSettings>) => {
-    setLayerData(prev => ({
-      ...prev,
-      textSettings: { ...prev.textSettings, ...updates }
-    }));
-  };
-
-  const updateBackgroundSettings = (updates: Partial<BackgroundSettings>) => {
-    setLayerData(prev => ({
-      ...prev,
-      backgroundSettings: { ...prev.backgroundSettings, ...updates }
-    }));
-  };
-
-  const updateVideoSettings = (updates: Partial<VideoSettings>) => {
-    setLayerData(prev => ({
-      ...prev,
-      videoSettings: { ...prev.videoSettings, ...updates }
-    }));
-  };
-
   const downloadImage = (format: 'png' | 'jpeg') => {
-    Sentry.startSpan(
-      {
-        op: "export.image",
-        name: "Download Image",
-      },
-      (span) => {
-        const canvas = canvasRef.current;
-        if (!canvas) return;
+    const canvas = canvasRef.current;
+    if (!canvas) return;
 
-        span.setAttribute("export.format", format);
-        span.setAttribute("canvas.width", canvas.width);
-        span.setAttribute("canvas.height", canvas.height);
-
-        try {
-          const link = document.createElement('a');
-          link.download = `behindtext-effect.${format}`;
-          link.href = canvas.toDataURL(`image/${format}`, format === 'jpeg' ? 0.9 : undefined);
-          link.click();
-          
-          span.setAttribute("export.success", true);
-        } catch (error) {
-          Sentry.captureException(error);
-          span.setAttribute("export.success", false);
-        }
-      }
-    );
+    const link = document.createElement('a');
+    link.download = `behindtext-effect.${format}`;
+    link.href = canvas.toDataURL(`image/${format}`, format === 'jpeg' ? 0.9 : undefined);
+    link.click();
   };
 
   return (
@@ -499,644 +316,50 @@ const ImageEditor: React.FC = () => {
       <div className="relative z-10 container mx-auto px-4 py-8">
         <div className="flex flex-col xl:flex-row gap-8">
           <div className="flex-1">
-            <div className="backdrop-blur-xl bg-white/10 rounded-3xl p-8 border border-white/20 shadow-2xl">
-              <div className="mb-6">
-                <h2 className="text-2xl font-semibold mb-4 text-white">Canvas Preview</h2>
-                <div className="flex flex-wrap gap-3 text-sm text-gray-300 mb-3">
-                  <span className="flex items-center gap-2 px-3 py-1 rounded-full bg-blue-500/20 border border-blue-400/30">
-                    <div className="w-2 h-2 bg-blue-400 rounded-full"></div>
-                    Background Layer
-                  </span>
-                  <span className="flex items-center gap-2 px-3 py-1 rounded-full bg-green-500/20 border border-green-400/30">
-                    <div className="w-2 h-2 bg-green-400 rounded-full"></div>
-                    Text Layer
-                  </span>
-                  <span className="flex items-center gap-2 px-3 py-1 rounded-full bg-purple-500/20 border border-purple-400/30">
-                    <div className="w-2 h-2 bg-purple-400 rounded-full"></div>
-                    Subject Layer
-                  </span>
-                </div>
-                {layerData.originalImage && (
-                  <div className="flex flex-wrap gap-2 text-sm text-gray-400">
-                    <div className="px-3 py-1 rounded-full bg-gray-500/20 border border-gray-400/30">
-                      {canvasDimensions.width} × {canvasDimensions.height}px
-                    </div>
-                    <div className="px-3 py-1 rounded-full bg-gray-500/20 border border-gray-400/30">
-                      Aspect Ratio: {(canvasDimensions.width / canvasDimensions.height).toFixed(2)}:1
-                    </div>
-                  </div>
-                )}
-              </div>
-              
-              <div className="backdrop-blur-lg bg-black/20 rounded-2xl p-6 flex items-center justify-center min-h-96 border border-white/10">
-                {isProcessing ? (
-                  <div className="text-center">
-                    <div className="relative">
-                      <div className="w-16 h-16 border-4 border-purple-500/30 rounded-full animate-spin border-t-purple-400 mx-auto mb-4"></div>
-                      <div className="absolute inset-0 w-16 h-16 border-4 border-blue-500/20 rounded-full animate-ping mx-auto"></div>
-                    </div>
-                    <p className="text-gray-300 font-medium">Processing your image...</p>
-                    <p className="text-sm text-gray-400 mt-1">Removing background with AI</p>
-                  </div>
-                ) : (
-                  <canvas
-                    ref={canvasRef}
-                    width={canvasDimensions.width}
-                    height={canvasDimensions.height}
-                    className="max-w-full max-h-full rounded-xl shadow-2xl border border-white/20"
-                    style={{
-                      maxWidth: '100%',
-                      maxHeight: '70vh',
-                      objectFit: 'contain'
-                    }}
-                  />
-                )}
-              </div>
-            </div>
+            <CanvasPreview 
+              canvasRef={canvasRef}
+              canvasDimensions={canvasDimensions}
+              isProcessing={isProcessing}
+              hasImage={!!layerData.originalImage}
+            />
           </div>
 
           <div className="w-full xl:w-96">
             <div className="backdrop-blur-xl bg-white/10 rounded-3xl border border-white/20 shadow-2xl overflow-hidden">
-              <div className="flex border-b border-white/20">
-                <button
-                  onClick={() => setActiveTab('upload')}
-                  className={`flex-1 px-6 py-4 text-sm font-medium transition-all duration-300 ${
-                    activeTab === 'upload'
-                      ? 'bg-gradient-to-r from-blue-500/30 to-purple-500/30 text-white border-b-2 border-blue-400'
-                      : 'text-gray-300 hover:text-white hover:bg-white/5'
-                  }`}
-                >
-                  <Upload className="w-4 h-4 mx-auto mb-1" />
-                  Upload
-                </button>
-                <button
-                  onClick={() => setActiveTab('edit')}
-                  className={`flex-1 px-6 py-4 text-sm font-medium transition-all duration-300 ${
-                    activeTab === 'edit'
-                      ? 'bg-gradient-to-r from-purple-500/30 to-pink-500/30 text-white border-b-2 border-purple-400'
-                      : 'text-gray-300 hover:text-white hover:bg-white/5'
-                  }`}
-                  disabled={!layerData.originalImage}
-                >
-                  <Settings className="w-4 h-4 mx-auto mb-1" />
-                  Edit
-                </button>
-                <button
-                  onClick={() => setActiveTab('export')}
-                  className={`flex-1 px-6 py-4 text-sm font-medium transition-all duration-300 ${
-                    activeTab === 'export'
-                      ? 'bg-gradient-to-r from-pink-500/30 to-blue-500/30 text-white border-b-2 border-pink-400'
-                      : 'text-gray-300 hover:text-white hover:bg-white/5'
-                  }`}
-                  disabled={!layerData.originalImage}
-                >
-                  <Download className="w-4 h-4 mx-auto mb-1" />
-                  Export
-                </button>
-              </div>
+              <TabNavigation 
+                activeTab={activeTab}
+                setActiveTab={setActiveTab}
+                hasImage={!!layerData.originalImage}
+              />
 
               <div className="p-6">
                 {activeTab === 'upload' && (
-                  <div className="space-y-6">
-                    <h3 className="text-xl font-semibold mb-6 text-white">Upload Your Image</h3>
-                    <div
-                      onClick={() => fileInputRef.current?.click()}
-                      className="border-2 border-dashed border-white/30 rounded-2xl p-8 text-center cursor-pointer hover:border-blue-400/50 transition-all duration-300 hover:bg-white/5 group"
-                    >
-                      <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-gradient-to-r from-blue-500/20 to-purple-500/20 flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
-                        <Upload className="w-8 h-8 text-blue-400" />
-                      </div>
-                      <p className="text-gray-200 mb-2 font-medium">Click to upload an image</p>
-                      <p className="text-sm text-gray-400">Supports JPG, PNG formats</p>
-                      <p className="text-xs text-gray-500 mt-2">Create your text behind image effect</p>
-                    </div>
-                    <input
-                      ref={fileInputRef}
-                      type="file"
-                      accept="image/*"
-                      onChange={handleImageUpload}
-                      className="hidden"
-                    />
-                    
-                    {/* SEO Content Section */}
-                    <div className="mt-8 p-6 bg-black/20 rounded-xl border border-white/10">
-                      <h4 className="text-lg font-semibold mb-4 text-white">How to Create Text Behind Image Effects</h4>
-                      <ol className="space-y-3 text-sm text-gray-300">
-                        <li className="flex items-start gap-3">
-                          <span className="flex-shrink-0 w-6 h-6 bg-blue-500/20 rounded-full flex items-center justify-center text-xs font-bold text-blue-400">1</span>
-                          <span><strong>Upload your image</strong> - Choose any photo where you want to create a text behind effect</span>
-                        </li>
-                        <li className="flex items-start gap-3">
-                          <span className="flex-shrink-0 w-6 h-6 bg-purple-500/20 rounded-full flex items-center justify-center text-xs font-bold text-purple-400">2</span>
-                          <span><strong>AI removes background</strong> - Our AI automatically separates the subject from the background</span>
-                        </li>
-                        <li className="flex items-start gap-3">
-                          <span className="flex-shrink-0 w-6 h-6 bg-pink-500/20 rounded-full flex items-center justify-center text-xs font-bold text-pink-400">3</span>
-                          <span><strong>Add text between layers</strong> - Position your text behind the subject but in front of the background</span>
-                        </li>
-                        <li className="flex items-start gap-3">
-                          <span className="flex-shrink-0 w-6 h-6 bg-green-500/20 rounded-full flex items-center justify-center text-xs font-bold text-green-400">4</span>
-                          <span><strong>Export your creation</strong> - Download as image or animated video for social media</span>
-                        </li>
-                      </ol>
-                    </div>
-                  </div>
+                  <UploadTab onImageUpload={handleImageUpload} />
                 )}
 
                 {activeTab === 'edit' && (
-                  <div className="space-y-6">
-                    <h3 className="text-xl font-semibold mb-6 text-white">Edit Your BehindText Effect</h3>
-                    
-                    <div className="flex rounded-xl bg-black/20 p-1 border border-white/10">
-                      <button
-                        onClick={() => setEditSubTab('text')}
-                        className={`flex-1 px-3 py-3 text-sm font-medium rounded-lg transition-all duration-300 flex items-center justify-center gap-2 ${
-                          editSubTab === 'text'
-                            ? 'bg-gradient-to-r from-blue-500/30 to-purple-500/30 text-white shadow-lg'
-                            : 'text-gray-300 hover:text-white hover:bg-white/5'
-                        }`}
-                      >
-                        <Type className="w-4 h-4" />
-                        Text
-                      </button>
-                      <button
-                        onClick={() => setEditSubTab('background')}
-                        className={`flex-1 px-3 py-3 text-sm font-medium rounded-lg transition-all duration-300 flex items-center justify-center gap-2 ${
-                          editSubTab === 'background'
-                            ? 'bg-gradient-to-r from-purple-500/30 to-pink-500/30 text-white shadow-lg'
-                            : 'text-gray-300 hover:text-white hover:bg-white/5'
-                        }`}
-                      >
-                        <ImageIcon className="w-4 h-4" />
-                        Background
-                      </button>
-                      <button
-                        onClick={() => setEditSubTab('video')}
-                        className={`flex-1 px-3 py-3 text-sm font-medium rounded-lg transition-all duration-300 flex items-center justify-center gap-2 ${
-                          editSubTab === 'video'
-                            ? 'bg-gradient-to-r from-orange-500/30 to-red-500/30 text-white shadow-lg'
-                            : 'text-gray-300 hover:text-white hover:bg-white/5'
-                        }`}
-                      >
-                        <Video className="w-4 h-4" />
-                        Video
-                      </button>
-                    </div>
-
-                    {editSubTab === 'text' && (
-                      <div className="space-y-6">
-                        {/* Position */}
-                        <div className="grid grid-cols-2 gap-4">
-                          <div className="space-y-3">
-                            <label className="block text-sm font-medium text-gray-200">
-                              Horizontal: <span className="text-blue-400">{layerData.textSettings.x}%</span>
-                            </label>
-                            <input
-                              type="range"
-                              min="0"
-                              max="100"
-                              value={layerData.textSettings.x}
-                              onChange={(e) => updateTextSettings({ x: parseInt(e.target.value) })}
-                              className="w-full h-2 bg-black/20 rounded-lg appearance-none cursor-pointer slider"
-                            />
-                          </div>
-                          <div className="space-y-3">
-                            <label className="block text-sm font-medium text-gray-200">
-                              Vertical: <span className="text-blue-400">{layerData.textSettings.y}%</span>
-                            </label>
-                            <input
-                              type="range"
-                              min="0"
-                              max="100"
-                              value={layerData.textSettings.y}
-                              onChange={(e) => updateTextSettings({ y: parseInt(e.target.value) })}
-                              className="w-full h-2 bg-black/20 rounded-lg appearance-none cursor-pointer slider"
-                            />
-                          </div>
-                        </div>
-
-                        {/* Opacity */}
-                        <div className="space-y-3">
-                          <label className="block text-sm font-medium text-gray-200">
-                            Opacity: <span className="text-blue-400">{layerData.textSettings.opacity}%</span>
-                          </label>
-                          <input
-                            type="range"
-                            min="0"
-                            max="100"
-                            value={layerData.textSettings.opacity}
-                            onChange={(e) => updateTextSettings({ opacity: parseInt(e.target.value) })}
-                            className="w-full h-2 bg-black/20 rounded-lg appearance-none cursor-pointer slider"
-                          />
-                        </div>
-
-                        {/* Text Content */}
-                        <div className="space-y-3">
-                          <label className="block text-sm font-medium text-gray-200">Text Content</label>
-                          <input
-                            type="text"
-                            value={layerData.textSettings.text}
-                            onChange={(e) => updateTextSettings({ text: e.target.value })}
-                            className="w-full px-4 py-3 bg-black/20 border border-white/20 rounded-xl text-white backdrop-blur-sm focus:border-blue-400/50 focus:outline-none transition-colors"
-                            placeholder="Enter your text here..."
-                          />
-                        </div>
-
-                        {/* Font Family */}
-                        <div className="space-y-3">
-                          <label className="block text-sm font-medium text-gray-200">Font Family</label>
-                          <select
-                            value={layerData.textSettings.fontFamily}
-                            onChange={(e) => updateTextSettings({ fontFamily: e.target.value })}
-                            className="w-full px-4 py-3 bg-black/20 border border-white/20 rounded-xl text-white backdrop-blur-sm focus:border-blue-400/50 focus:outline-none transition-colors"
-                          >
-                            {fontFamilies.map(font => (
-                              <option key={font} value={font} className="bg-gray-800">{font}</option>
-                            ))}
-                          </select>
-                        </div>
-
-                        {/* Font Size */}
-                        <div className="space-y-3">
-                          <label className="block text-sm font-medium text-gray-200">
-                            Font Size: <span className="text-blue-400">{layerData.textSettings.fontSize}px</span>
-                          </label>
-                          <input
-                            type="range"
-                            min="12"
-                            max="120"
-                            value={layerData.textSettings.fontSize}
-                            onChange={(e) => updateTextSettings({ fontSize: parseInt(e.target.value) })}
-                            className="w-full h-2 bg-black/20 rounded-lg appearance-none cursor-pointer slider"
-                          />
-                        </div>
-
-                        {/* Font Weight */}
-                        <div className="space-y-3">
-                          <label className="block text-sm font-medium text-gray-200">
-                            Font Weight: <span className="text-blue-400">{layerData.textSettings.fontWeight}</span>
-                          </label>
-                          <input
-                            type="range"
-                            min="100"
-                            max="900"
-                            step="100"
-                            value={layerData.textSettings.fontWeight}
-                            onChange={(e) => updateTextSettings({ fontWeight: parseInt(e.target.value) })}
-                            className="w-full h-2 bg-black/20 rounded-lg appearance-none cursor-pointer slider"
-                          />
-                        </div>
-
-                        {/* Color */}
-                        <div className="space-y-3">
-                          <label className="block text-sm font-medium text-gray-200">Text Color</label>
-                          <div className="flex gap-3">
-                            <input
-                              type="color"
-                              value={layerData.textSettings.color}
-                              onChange={(e) => updateTextSettings({ color: e.target.value })}
-                              className="w-12 h-12 rounded-lg border border-white/20 bg-black/20 cursor-pointer"
-                            />
-                            <input
-                              type="text"
-                              value={layerData.textSettings.color}
-                              onChange={(e) => updateTextSettings({ color: e.target.value })}
-                              className="flex-1 px-4 py-3 bg-black/20 border border-white/20 rounded-xl text-white backdrop-blur-sm focus:border-blue-400/50 focus:outline-none transition-colors"
-                              placeholder="#ffffff"
-                            />
-                          </div>
-                        </div>
-
-                        {/* Stroke */}
-                        <div className="space-y-3">
-                          <label className="block text-sm font-medium text-gray-200">
-                            Stroke Width: <span className="text-blue-400">{layerData.textSettings.strokeWidth}px</span>
-                          </label>
-                          <input
-                            type="range"
-                            min="0"
-                            max="10"
-                            value={layerData.textSettings.strokeWidth}
-                            onChange={(e) => updateTextSettings({ strokeWidth: parseInt(e.target.value) })}
-                            className="w-full h-2 bg-black/20 rounded-lg appearance-none cursor-pointer slider"
-                          />
-                        </div>
-
-                        <div className="space-y-3">
-                          <label className="block text-sm font-medium text-gray-200">Stroke Color</label>
-                          <div className="flex gap-3">
-                            <input
-                              type="color"
-                              value={layerData.textSettings.strokeColor}
-                              onChange={(e) => updateTextSettings({ strokeColor: e.target.value })}
-                              className="w-12 h-12 rounded-lg border border-white/20 bg-black/20 cursor-pointer"
-                            />
-                            <input
-                              type="text"
-                              value={layerData.textSettings.strokeColor}
-                              onChange={(e) => updateTextSettings({ strokeColor: e.target.value })}
-                              className="flex-1 px-4 py-3 bg-black/20 border border-white/20 rounded-xl text-white backdrop-blur-sm focus:border-blue-400/50 focus:outline-none transition-colors"
-                              placeholder="#000000"
-                            />
-                          </div>
-                        </div>
-
-                        {/* Shadow */}
-                        <div className="space-y-3">
-                          <label className="block text-sm font-medium text-gray-200">
-                            Shadow Blur: <span className="text-blue-400">{layerData.textSettings.shadowBlur}px</span>
-                          </label>
-                          <input
-                            type="range"
-                            min="0"
-                            max="20"
-                            value={layerData.textSettings.shadowBlur}
-                            onChange={(e) => updateTextSettings({ shadowBlur: parseInt(e.target.value) })}
-                            className="w-full h-2 bg-black/20 rounded-lg appearance-none cursor-pointer slider"
-                          />
-                        </div>
-
-                        <div className="grid grid-cols-2 gap-4">
-                          <div className="space-y-3">
-                            <label className="block text-sm font-medium text-gray-200">
-                              Shadow X: <span className="text-blue-400">{layerData.textSettings.shadowOffsetX}px</span>
-                            </label>
-                            <input
-                              type="range"
-                              min="-20"
-                              max="20"
-                              value={layerData.textSettings.shadowOffsetX}
-                              onChange={(e) => updateTextSettings({ shadowOffsetX: parseInt(e.target.value) })}
-                              className="w-full h-2 bg-black/20 rounded-lg appearance-none cursor-pointer slider"
-                            />
-                          </div>
-                          <div className="space-y-3">
-                            <label className="block text-sm font-medium text-gray-200">
-                              Shadow Y: <span className="text-blue-400">{layerData.textSettings.shadowOffsetY}px</span>
-                            </label>
-                            <input
-                              type="range"
-                              min="-20"
-                              max="20"
-                              value={layerData.textSettings.shadowOffsetY}
-                              onChange={(e) => updateTextSettings({ shadowOffsetY: parseInt(e.target.value) })}
-                              className="w-full h-2 bg-black/20 rounded-lg appearance-none cursor-pointer slider"
-                            />
-                          </div>
-                        </div>
-
-                        <div className="space-y-3">
-                          <label className="block text-sm font-medium text-gray-200">Shadow Color</label>
-                          <div className="flex gap-3">
-                            <input
-                              type="color"
-                              value={layerData.textSettings.shadowColor}
-                              onChange={(e) => updateTextSettings({ shadowColor: e.target.value })}
-                              className="w-12 h-12 rounded-lg border border-white/20 bg-black/20 cursor-pointer"
-                            />
-                            <input
-                              type="text"
-                              value={layerData.textSettings.shadowColor}
-                              onChange={(e) => updateTextSettings({ shadowColor: e.target.value })}
-                              className="flex-1 px-4 py-3 bg-black/20 border border-white/20 rounded-xl text-white backdrop-blur-sm focus:border-blue-400/50 focus:outline-none transition-colors"
-                              placeholder="#000000"
-                            />
-                          </div>
-                        </div>
-
-                        {/* Rotation */}
-                        <div className="space-y-3">
-                          <label className="block text-sm font-medium text-gray-200">
-                            Rotation: <span className="text-blue-400">{layerData.textSettings.rotation}°</span>
-                          </label>
-                          <input
-                            type="range"
-                            min="-180"
-                            max="180"
-                            value={layerData.textSettings.rotation}
-                            onChange={(e) => updateTextSettings({ rotation: parseInt(e.target.value) })}
-                            className="w-full h-2 bg-black/20 rounded-lg appearance-none cursor-pointer slider"
-                          />
-                        </div>
-                      </div>
-                    )}
-
-                    {editSubTab === 'background' && (
-                      <div className="space-y-6">
-                        <div className="space-y-3">
-                          <label className="block text-sm font-medium text-gray-200">
-                            Brightness: <span className="text-blue-400">{layerData.backgroundSettings.brightness}%</span>
-                          </label>
-                          <input
-                            type="range"
-                            min="0"
-                            max="200"
-                            value={layerData.backgroundSettings.brightness}
-                            onChange={(e) => updateBackgroundSettings({ brightness: parseInt(e.target.value) })}
-                            className="w-full h-2 bg-black/20 rounded-lg appearance-none cursor-pointer slider"
-                          />
-                        </div>
-
-                        <div className="space-y-3">
-                          <label className="block text-sm font-medium text-gray-200">
-                            Contrast: <span className="text-blue-400">{layerData.backgroundSettings.contrast}%</span>
-                          </label>
-                          <input
-                            type="range"
-                            min="0"
-                            max="200"
-                            value={layerData.backgroundSettings.contrast}
-                            onChange={(e) => updateBackgroundSettings({ contrast: parseInt(e.target.value) })}
-                            className="w-full h-2 bg-black/20 rounded-lg appearance-none cursor-pointer slider"
-                          />
-                        </div>
-
-                        <div className="space-y-3">
-                          <label className="block text-sm font-medium text-gray-200">
-                            Saturation: <span className="text-blue-400">{layerData.backgroundSettings.saturation}%</span>
-                          </label>
-                          <input
-                            type="range"
-                            min="0"
-                            max="200"
-                            value={layerData.backgroundSettings.saturation}
-                            onChange={(e) => updateBackgroundSettings({ saturation: parseInt(e.target.value) })}
-                            className="w-full h-2 bg-black/20 rounded-lg appearance-none cursor-pointer slider"
-                          />
-                        </div>
-
-                        <div className="space-y-3">
-                          <label className="block text-sm font-medium text-gray-200">
-                            Blur: <span className="text-blue-400">{layerData.backgroundSettings.blur}px</span>
-                          </label>
-                          <input
-                            type="range"
-                            min="0"
-                            max="20"
-                            value={layerData.backgroundSettings.blur}
-                            onChange={(e) => updateBackgroundSettings({ blur: parseInt(e.target.value) })}
-                            className="w-full h-2 bg-black/20 rounded-lg appearance-none cursor-pointer slider"
-                          />
-                        </div>
-                      </div>
-                    )}
-
-                    {editSubTab === 'video' && (
-                      <div className="space-y-6">
-                        <div className="space-y-3">
-                          <label className="block text-sm font-medium text-gray-200">Animation Type</label>
-                          <select
-                            value={layerData.videoSettings.animationType}
-                            onChange={(e) => updateVideoSettings({ animationType: e.target.value as VideoSettings['animationType'] })}
-                            className="w-full px-4 py-3 bg-black/20 border border-white/20 rounded-xl text-white backdrop-blur-sm focus:border-blue-400/50 focus:outline-none transition-colors"
-                          >
-                            <option value="fade-in" className="bg-gray-800">Fade In</option>
-                            <option value="fade-out" className="bg-gray-800">Fade Out</option>
-                            <option value="zoom-in" className="bg-gray-800">Zoom In</option>
-                            <option value="zoom-out" className="bg-gray-800">Zoom Out</option>
-                          </select>
-                        </div>
-
-                        <div className="space-y-3">
-                          <label className="block text-sm font-medium text-gray-200">
-                            Animation Duration: <span className="text-blue-400">{layerData.videoSettings.animationDuration}s</span>
-                          </label>
-                          <input
-                            type="range"
-                            min="1"
-                            max="10"
-                            step="0.5"
-                            value={layerData.videoSettings.animationDuration}
-                            onChange={(e) => updateVideoSettings({ animationDuration: parseFloat(e.target.value) })}
-                            className="w-full h-2 bg-black/20 rounded-lg appearance-none cursor-pointer slider"
-                          />
-                        </div>
-
-                        <div className="space-y-3">
-                          <label className="block text-sm font-medium text-gray-200">Easing</label>
-                          <select
-                            value={layerData.videoSettings.easing}
-                            onChange={(e) => updateVideoSettings({ easing: e.target.value as VideoSettings['easing'] })}
-                            className="w-full px-4 py-3 bg-black/20 border border-white/20 rounded-xl text-white backdrop-blur-sm focus:border-blue-400/50 focus:outline-none transition-colors"
-                          >
-                            <option value="ease-in" className="bg-gray-800">Ease In</option>
-                            <option value="ease-out" className="bg-gray-800">Ease Out</option>
-                            <option value="ease-in-out" className="bg-gray-800">Ease In Out</option>
-                            <option value="linear" className="bg-gray-800">Linear</option>
-                          </select>
-                        </div>
-
-                        <div className="space-y-3">
-                          <label className="block text-sm font-medium text-gray-200">
-                            Video Duration: <span className="text-blue-400">{layerData.videoSettings.videoDuration}s</span>
-                          </label>
-                          <input
-                            type="range"
-                            min="5"
-                            max="30"
-                            value={layerData.videoSettings.videoDuration}
-                            onChange={(e) => updateVideoSettings({ videoDuration: parseInt(e.target.value) })}
-                            className="w-full h-2 bg-black/20 rounded-lg appearance-none cursor-pointer slider"
-                          />
-                        </div>
-
-                        <div className="space-y-4">
-                          <h4 className="text-lg font-medium text-white">Animation Preview</h4>
-                          <div className="flex gap-3">
-                            <button
-                              onClick={playAnimation}
-                              disabled={isAnimationPlaying}
-                              className="flex-1 px-4 py-3 bg-gradient-to-r from-green-500/20 to-blue-500/20 border border-green-400/30 rounded-xl text-white font-medium hover:from-green-500/30 hover:to-blue-500/30 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
-                            >
-                              <Play className="w-4 h-4" />
-                              Play
-                            </button>
-                            <button
-                              onClick={pauseAnimation}
-                              disabled={!isAnimationPlaying}
-                              className="flex-1 px-4 py-3 bg-gradient-to-r from-yellow-500/20 to-orange-500/20 border border-yellow-400/30 rounded-xl text-white font-medium hover:from-yellow-500/30 hover:to-orange-500/30 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
-                            >
-                              <Pause className="w-4 h-4" />
-                              Pause
-                            </button>
-                          </div>
-                        </div>
-                      </div>
-                    )}
-                  </div>
+                  <EditTab 
+                    editSubTab={editSubTab}
+                    setEditSubTab={setEditSubTab}
+                    textSettings={layerData.textSettings}
+                    backgroundSettings={layerData.backgroundSettings}
+                    videoSettings={layerData.videoSettings}
+                    onUpdateText={updateTextSettings}
+                    onUpdateBackground={updateBackgroundSettings}
+                    onUpdateVideo={updateVideoSettings}
+                    isAnimationPlaying={isAnimationPlaying}
+                    playAnimation={playAnimation}
+                    pauseAnimation={pauseAnimation}
+                  />
                 )}
 
                 {activeTab === 'export' && (
-                  <div className="space-y-6">
-                    <h3 className="text-xl font-semibold mb-6 text-white">Export Your BehindText Creation</h3>
-                    
-                    <div className="space-y-4">
-                      <h4 className="text-lg font-medium text-white">Export as Image</h4>
-                      <div className="grid grid-cols-2 gap-3">
-                        <button
-                          onClick={() => downloadImage('png')}
-                          className="px-4 py-3 bg-gradient-to-r from-blue-500/20 to-purple-500/20 border border-blue-400/30 rounded-xl text-white font-medium hover:from-blue-500/30 hover:to-purple-500/30 transition-all duration-300 flex items-center justify-center gap-2"
-                        >
-                          <Download className="w-4 h-4" />
-                          PNG
-                        </button>
-                        <button
-                          onClick={() => downloadImage('jpeg')}
-                          className="px-4 py-3 bg-gradient-to-r from-purple-500/20 to-pink-500/20 border border-purple-400/30 rounded-xl text-white font-medium hover:from-purple-500/30 hover:to-pink-500/30 transition-all duration-300 flex items-center justify-center gap-2"
-                        >
-                          <Download className="w-4 h-4" />
-                          JPEG
-                        </button>
-                      </div>
-                    </div>
-
-                    <div className="space-y-4">
-                      <h4 className="text-lg font-medium text-white">Export as Video</h4>
-                      <button
-                        onClick={downloadVideo}
-                        disabled={isExporting}
-                        className="w-full px-4 py-3 bg-gradient-to-r from-red-500/20 to-pink-500/20 border border-red-400/30 rounded-xl text-white font-medium hover:from-red-500/30 hover:to-pink-500/30 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
-                      >
-                        {isExporting ? (
-                          <>
-                            <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
-                            Exporting Video...
-                          </>
-                        ) : (
-                          <>
-                            <Video className="w-4 h-4" />
-                            Download Animated Video
-                          </>
-                        )}
-                      </button>
-                      <p className="text-sm text-gray-400 text-center">
-                        Video will be recorded for {layerData.videoSettings.videoDuration} seconds
-                      </p>
-                    </div>
-
-                    {/* SEO Benefits Section */}
-                    <div className="mt-8 p-6 bg-black/20 rounded-xl border border-white/10">
-                      <h4 className="text-lg font-semibold mb-4 text-white">Perfect for Social Media</h4>
-                      <div className="space-y-3 text-sm text-gray-300">
-                        <div className="flex items-center gap-3">
-                          <span className="w-2 h-2 bg-blue-400 rounded-full"></span>
-                          <span><strong>Instagram Stories & Posts</strong> - Eye-catching text behind image effects</span>
-                        </div>
-                        <div className="flex items-center gap-3">
-                          <span className="w-2 h-2 bg-purple-400 rounded-full"></span>
-                          <span><strong>TikTok & Reels</strong> - Animated text effects for viral content</span>
-                        </div>
-                        <div className="flex items-center gap-3">
-                          <span className="w-2 h-2 bg-pink-400 rounded-full"></span>
-                          <span><strong>Marketing Materials</strong> - Professional text in between image effects</span>
-                        </div>
-                        <div className="flex items-center gap-3">
-                          <span className="w-2 h-2 bg-green-400 rounded-full"></span>
-                          <span><strong>YouTube Thumbnails</strong> - Stand out with unique text placement</span>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
+                  <ExportTab 
+                    canvasDimensions={canvasDimensions}
+                    isExporting={isExporting}
+                    onDownloadImage={downloadImage}
+                    onDownloadVideo={downloadVideo}
+                  />
                 )}
               </div>
             </div>

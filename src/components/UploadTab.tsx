@@ -29,6 +29,29 @@ const UploadTab: React.FC<UploadTabProps> = ({ onImageUpload }) => {
         onChange={onImageUpload}
         className="hidden"
       />
+      
+      {/* SEO Content Section */}
+      <div className="mt-8 p-6 bg-black/20 rounded-xl border border-white/10">
+        <h4 className="text-lg font-semibold mb-4 text-white">How to Create Text Behind Image Effects</h4>
+        <ol className="space-y-3 text-sm text-gray-300">
+          <li className="flex items-start gap-3">
+            <span className="flex-shrink-0 w-6 h-6 bg-blue-500/20 rounded-full flex items-center justify-center text-xs font-bold text-blue-400">1</span>
+            <span><strong>Upload your image</strong> - Choose any photo where you want to create a text behind effect</span>
+          </li>
+          <li className="flex items-start gap-3">
+            <span className="flex-shrink-0 w-6 h-6 bg-purple-500/20 rounded-full flex items-center justify-center text-xs font-bold text-purple-400">2</span>
+            <span><strong>AI removes background</strong> - Our AI automatically separates the subject from the background</span>
+          </li>
+          <li className="flex items-start gap-3">
+            <span className="flex-shrink-0 w-6 h-6 bg-pink-500/20 rounded-full flex items-center justify-center text-xs font-bold text-pink-400">3</span>
+            <span><strong>Add text between layers</strong> - Position your text behind the subject but in front of the background</span>
+          </li>
+          <li className="flex items-start gap-3">
+            <span className="flex-shrink-0 w-6 h-6 bg-green-500/20 rounded-full flex items-center justify-center text-xs font-bold text-green-400">4</span>
+            <span><strong>Export your creation</strong> - Download as image or animated video for social media</span>
+          </li>
+        </ol>
+      </div>
     </div>
   );
 };

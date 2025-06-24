@@ -39,6 +39,21 @@ const BackgroundControls: React.FC<BackgroundControlsProps> = ({ backgroundSetti
         />
       </div>
 
+      {/* Saturation */}
+      <div className="space-y-3">
+        <label className="block text-sm font-medium text-gray-200">
+          Saturation: <span className="text-purple-400">{backgroundSettings.saturation}%</span>
+        </label>
+        <input
+          type="range"
+          min="0"
+          max="200"
+          value={backgroundSettings.saturation}
+          onChange={(e) => onUpdate({ saturation: parseInt(e.target.value) })}
+          className="w-full h-2 bg-black/20 rounded-lg appearance-none cursor-pointer slider-purple"
+        />
+      </div>
+
       {/* Blur */}
       <div className="space-y-3">
         <label className="block text-sm font-medium text-gray-200">
@@ -56,7 +71,7 @@ const BackgroundControls: React.FC<BackgroundControlsProps> = ({ backgroundSetti
 
       {/* Reset Button */}
       <button
-        onClick={() => onUpdate({ brightness: 100, contrast: 100, blur: 0 })}
+        onClick={() => onUpdate({ brightness: 100, contrast: 100, blur: 0, saturation: 100 })}
         className="w-full px-4 py-3 bg-gradient-to-r from-purple-500/20 to-pink-500/20 hover:from-purple-500/30 hover:to-pink-500/30 rounded-xl transition-all duration-300 border border-purple-400/30 text-white font-medium"
       >
         Reset to Default
