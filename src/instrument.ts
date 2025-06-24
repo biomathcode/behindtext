@@ -17,7 +17,7 @@ Sentry.init({
   // https://docs.sentry.io/platforms/javascript/configuration/options/#traces-sample-rate
   tracesSampleRate: 1.0,
   // Set `tracePropagationTargets` to control for which URLs trace propagation should be enabled
-  tracePropagationTargets: [/^//, /^https://behindtext\.xyz/],
+  tracePropagationTargets: [/^\//, /^https:\/\/behindtext\.xyz/],
   // Capture Replay for 10% of all sessions,
   // plus for 100% of sessions with an error
   // Learn more at
