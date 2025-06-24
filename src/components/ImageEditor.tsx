@@ -345,13 +345,38 @@ const ImageEditor: React.FC = () => {
     if (!canvas) return;
 
     const link = document.createElement('a');
-    link.download = `edited-image.${format}`;
+    link.download = `behindtext-effect.${format}`;
     link.href = canvas.toDataURL(`image/${format}`, format === 'jpeg' ? 0.9 : undefined);
     link.click();
   };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 text-white relative overflow-hidden">
+      {/* SEO Content Header */}
+      <header className="relative z-10 text-center py-8 px-4">
+        <h1 className="text-4xl md:text-6xl font-bold mb-4 bg-gradient-to-r from-blue-400 via-purple-400 to-pink-400 bg-clip-text text-transparent">
+          BehindText Effect
+        </h1>
+        <p className="text-xl md:text-2xl text-gray-300 mb-6 max-w-4xl mx-auto">
+          Create stunning <strong>text behind image effects</strong> with our free AI-powered editor. 
+          Perfect for social media, marketing, and creative projects.
+        </p>
+        <div className="flex flex-wrap justify-center gap-4 text-sm text-gray-400 mb-8">
+          <span className="px-3 py-1 bg-blue-500/20 rounded-full border border-blue-400/30">
+            ✨ AI Background Removal
+          </span>
+          <span className="px-3 py-1 bg-purple-500/20 rounded-full border border-purple-400/30">
+            🎨 Text Between Image Layers
+          </span>
+          <span className="px-3 py-1 bg-pink-500/20 rounded-full border border-pink-400/30">
+            🎬 Animated Video Export
+          </span>
+          <span className="px-3 py-1 bg-green-500/20 rounded-full border border-green-400/30">
+            📱 Mobile Friendly
+          </span>
+        </div>
+      </header>
+
       <div className="absolute inset-0 overflow-hidden">
         <div className="absolute -top-40 -right-40 w-80 h-80 bg-purple-500 rounded-full mix-blend-multiply filter blur-xl opacity-20 animate-pulse"></div>
         <div className="absolute -bottom-40 -left-40 w-80 h-80 bg-blue-500 rounded-full mix-blend-multiply filter blur-xl opacity-20 animate-pulse animation-delay-2000"></div>
@@ -486,7 +511,7 @@ const ImageEditor: React.FC = () => {
                       </div>
                       <p className="text-gray-200 mb-2 font-medium">Click to upload an image</p>
                       <p className="text-sm text-gray-400">Supports JPG, PNG formats</p>
-                      <p className="text-xs text-gray-500 mt-2">Aspect ratio will be preserved</p>
+                      <p className="text-xs text-gray-500 mt-2">Create your text behind image effect</p>
                     </div>
                     <input
                       ref={fileInputRef}
@@ -495,12 +520,35 @@ const ImageEditor: React.FC = () => {
                       onChange={handleImageUpload}
                       className="hidden"
                     />
+                    
+                    {/* SEO Content Section */}
+                    <div className="mt-8 p-6 bg-black/20 rounded-xl border border-white/10">
+                      <h4 className="text-lg font-semibold mb-4 text-white">How to Create Text Behind Image Effects</h4>
+                      <ol className="space-y-3 text-sm text-gray-300">
+                        <li className="flex items-start gap-3">
+                          <span className="flex-shrink-0 w-6 h-6 bg-blue-500/20 rounded-full flex items-center justify-center text-xs font-bold text-blue-400">1</span>
+                          <span><strong>Upload your image</strong> - Choose any photo where you want to create a text behind effect</span>
+                        </li>
+                        <li className="flex items-start gap-3">
+                          <span className="flex-shrink-0 w-6 h-6 bg-purple-500/20 rounded-full flex items-center justify-center text-xs font-bold text-purple-400">2</span>
+                          <span><strong>AI removes background</strong> - Our AI automatically separates the subject from the background</span>
+                        </li>
+                        <li className="flex items-start gap-3">
+                          <span className="flex-shrink-0 w-6 h-6 bg-pink-500/20 rounded-full flex items-center justify-center text-xs font-bold text-pink-400">3</span>
+                          <span><strong>Add text between layers</strong> - Position your text behind the subject but in front of the background</span>
+                        </li>
+                        <li className="flex items-start gap-3">
+                          <span className="flex-shrink-0 w-6 h-6 bg-green-500/20 rounded-full flex items-center justify-center text-xs font-bold text-green-400">4</span>
+                          <span><strong>Export your creation</strong> - Download as image or animated video for social media</span>
+                        </li>
+                      </ol>
+                    </div>
                   </div>
                 )}
 
                 {activeTab === 'edit' && (
                   <div className="space-y-6">
-                    <h3 className="text-xl font-semibold mb-6 text-white">Edit Your Composition</h3>
+                    <h3 className="text-xl font-semibold mb-6 text-white">Edit Your BehindText Effect</h3>
                     
                     <div className="flex rounded-xl bg-black/20 p-1 border border-white/10">
                       <button
@@ -826,7 +874,7 @@ const ImageEditor: React.FC = () => {
 
                 {activeTab === 'export' && (
                   <div className="space-y-6">
-                    <h3 className="text-xl font-semibold mb-6 text-white">Export Your Creation</h3>
+                    <h3 className="text-xl font-semibold mb-6 text-white">Export Your BehindText Creation</h3>
                     
                     <div className="space-y-4">
                       <h4 className="text-lg font-medium text-white">Export as Image</h4>
@@ -871,6 +919,29 @@ const ImageEditor: React.FC = () => {
                         Video will be recorded for {layerData.videoSettings.videoDuration} seconds
                       </p>
                     </div>
+
+                    {/* SEO Benefits Section */}
+                    <div className="mt-8 p-6 bg-black/20 rounded-xl border border-white/10">
+                      <h4 className="text-lg font-semibold mb-4 text-white">Perfect for Social Media</h4>
+                      <div className="space-y-3 text-sm text-gray-300">
+                        <div className="flex items-center gap-3">
+                          <span className="w-2 h-2 bg-blue-400 rounded-full"></span>
+                          <span><strong>Instagram Stories & Posts</strong> - Eye-catching text behind image effects</span>
+                        </div>
+                        <div className="flex items-center gap-3">
+                          <span className="w-2 h-2 bg-purple-400 rounded-full"></span>
+                          <span><strong>TikTok & Reels</strong> - Animated text effects for viral content</span>
+                        </div>
+                        <div className="flex items-center gap-3">
+                          <span className="w-2 h-2 bg-pink-400 rounded-full"></span>
+                          <span><strong>Marketing Materials</strong> - Professional text in between image effects</span>
+                        </div>
+                        <div className="flex items-center gap-3">
+                          <span className="w-2 h-2 bg-green-400 rounded-full"></span>
+                          <span><strong>YouTube Thumbnails</strong> - Stand out with unique text placement</span>
+                        </div>
+                      </div>
+                    </div>
                   </div>
                 )}
               </div>
@@ -878,6 +949,37 @@ const ImageEditor: React.FC = () => {
           </div>
         </div>
       </div>
+
+      {/* Footer SEO Content */}
+      <footer className="relative z-10 mt-16 py-12 px-4 border-t border-white/10">
+        <div className="container mx-auto text-center">
+          <h3 className="text-2xl font-bold mb-6 text-white">Why Choose BehindText for Your Text Behind Image Effects?</h3>
+          <div className="grid md:grid-cols-3 gap-8 mb-8">
+            <div className="p-6 bg-black/20 rounded-xl border border-white/10">
+              <h4 className="text-lg font-semibold mb-3 text-blue-400">AI-Powered Background Removal</h4>
+              <p className="text-gray-300 text-sm">
+                Our advanced AI automatically removes backgrounds with precision, making it easy to create professional text behind image effects without manual editing.
+              </p>
+            </div>
+            <div className="p-6 bg-black/20 rounded-xl border border-white/10">
+              <h4 className="text-lg font-semibold mb-3 text-purple-400">Perfect Text Positioning</h4>
+              <p className="text-gray-300 text-sm">
+                Position your text exactly where you want it - behind the subject but in front of the background. Create stunning text in between image effects effortlessly.
+              </p>
+            </div>
+            <div className="p-6 bg-black/20 rounded-xl border border-white/10">
+              <h4 className="text-lg font-semibold mb-3 text-pink-400">Export Options</h4>
+              <p className="text-gray-300 text-sm">
+                Download your creations as high-quality images or animated videos. Perfect for social media, marketing, and creative projects.
+              </p>
+            </div>
+          </div>
+          <p className="text-gray-400 text-sm max-w-2xl mx-auto">
+            BehindText is the ultimate free tool for creating text behind image effects. Whether you're a content creator, marketer, or designer, 
+            our AI-powered editor makes it simple to create professional text in between image effects that stand out on social media and beyond.
+          </p>
+        </div>
+      </footer>
     </div>
   );
 };
