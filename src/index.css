@@ -112,9 +112,32 @@
   background: linear-gradient(135deg, rgba(59, 130, 246, 0.7), rgba(139, 92, 246, 0.7));
 }
 
-/* React Select custom styles for better integration */
+/* React Select Apple Liquid Glass Theme */
+@keyframes menuSlideIn {
+  from {
+    opacity: 0;
+    transform: translateY(-10px) scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes optionSlideIn {
+  from {
+    opacity: 0;
+    transform: translateX(-8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+/* Enhanced font selector animations */
 .font-selector .font-selector__control {
-  transition: all 0.2s ease;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .font-selector .font-selector__control:hover {
@@ -122,29 +145,23 @@
 }
 
 .font-selector .font-selector__menu {
-  animation: slideDown 0.2s ease;
-}
-
-@keyframes slideDown {
-  from {
-    opacity: 0;
-    transform: translateY(-10px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
+  animation: menuSlideIn 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .font-selector .font-selector__option {
-  transition: all 0.15s ease;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  animation: optionSlideIn 0.2s ease;
 }
 
 .font-selector .font-selector__option:hover {
   transform: translateX(4px);
 }
 
-/* Font preview in options */
+.font-selector .font-selector__option:active {
+  transform: translateX(2px) scale(0.98);
+}
+
+/* Font preview enhancement */
 .font-selector .font-selector__option[data-category="Google Fonts"] {
   position: relative;
 }
@@ -158,4 +175,43 @@
   font-size: 12px;
   opacity: 0.6;
   font-family: inherit;
+  background: linear-gradient(135deg, rgba(139, 92, 246, 0.2), rgba(59, 130, 246, 0.2));
+  padding: 2px 6px;
+  border-radius: 4px;
+  border: 1px solid rgba(139, 92, 246, 0.3);
+}
+
+/* Loading state enhancement */
+.font-selector .font-selector__loading-indicator {
+  color: rgba(139, 92, 246, 1);
+}
+
+.font-selector .font-selector__loading-indicator > span {
+  background: linear-gradient(135deg, #8b5cf6, #3b82f6);
+}
+
+/* Input text color fix */
+.font-selector .font-selector__input input {
+  color: white !important;
+}
+
+.font-selector .font-selector__input input::placeholder {
+  color: rgba(156, 163, 175, 0.8) !important;
+}
+
+/* Group label enhancement */
+.font-selector .font-selector__group-heading {
+  background: linear-gradient(135deg, rgba(139, 92, 246, 0.2), rgba(59, 130, 246, 0.2)) !important;
+  border: 1px solid rgba(139, 92, 246, 0.3) !important;
+  backdrop-filter: blur(8px) !important;
+}
+
+/* No options message styling */
+.font-selector .font-selector__menu-notice {
+  color: rgba(156, 163, 175, 0.8) !important;
+  background: rgba(255, 255, 255, 0.05) !important;
+  border-radius: 8px !important;
+  margin: 8px !important;
+  padding: 12px !important;
+  border: 1px solid rgba(255, 255, 255, 0.1) !important;
 }
