@@ -1,5 +1,6 @@
 import React from 'react';
 import { TextSettings } from '../types';
+import FontSelector from './FontSelector';
 
 interface TextControlsProps {
   textSettings: TextSettings;
@@ -7,8 +8,6 @@ interface TextControlsProps {
 }
 
 const TextControls: React.FC<TextControlsProps> = ({ textSettings, onUpdate }) => {
-  const fontFamilies = ['Arial', 'Helvetica', 'Times New Roman', 'Georgia', 'Verdana', 'Comic Sans MS', 'Impact', 'Trebuchet MS'];
-
   return (
     <div className="space-y-6">
       {/* Position */}
@@ -68,19 +67,11 @@ const TextControls: React.FC<TextControlsProps> = ({ textSettings, onUpdate }) =
         />
       </div>
 
-      {/* Font Family */}
-      <div className="space-y-3">
-        <label className="block text-sm font-medium text-gray-200">Font Family</label>
-        <select
-          value={textSettings.fontFamily}
-          onChange={(e) => onUpdate({ fontFamily: e.target.value })}
-          className="w-full px-4 py-3 bg-black/20 border border-white/20 rounded-xl text-white backdrop-blur-sm focus:border-blue-400/50 focus:outline-none transition-colors"
-        >
-          {fontFamilies.map(font => (
-            <option key={font} value={font} className="bg-gray-800">{font}</option>
-          ))}
-        </select>
-      </div>
+      {/* Enhanced Font Family Selector */}
+      <FontSelector 
+        value={textSettings.fontFamily}
+        onChange={(font) => onUpdate({ fontFamily: font })}
+      />
 
       {/* Font Size */}
       <div className="space-y-3">

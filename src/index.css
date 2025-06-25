@@ -111,3 +111,51 @@
 ::-webkit-scrollbar-thumb:hover {
   background: linear-gradient(135deg, rgba(59, 130, 246, 0.7), rgba(139, 92, 246, 0.7));
 }
+
+/* React Select custom styles for better integration */
+.font-selector .font-selector__control {
+  transition: all 0.2s ease;
+}
+
+.font-selector .font-selector__control:hover {
+  transform: translateY(-1px);
+}
+
+.font-selector .font-selector__menu {
+  animation: slideDown 0.2s ease;
+}
+
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.font-selector .font-selector__option {
+  transition: all 0.15s ease;
+}
+
+.font-selector .font-selector__option:hover {
+  transform: translateX(4px);
+}
+
+/* Font preview in options */
+.font-selector .font-selector__option[data-category="Google Fonts"] {
+  position: relative;
+}
+
+.font-selector .font-selector__option[data-category="Google Fonts"]::after {
+  content: "Aa";
+  position: absolute;
+  right: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 12px;
+  opacity: 0.6;
+  font-family: inherit;
+}
