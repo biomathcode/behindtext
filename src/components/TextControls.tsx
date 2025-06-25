@@ -59,11 +59,11 @@ const TextControls: React.FC<TextControlsProps> = ({ textSettings, onUpdate }) =
       {/* Text Content */}
       <div className="space-y-3">
         <label className="block text-sm font-medium text-gray-200">Text Content</label>
-        <input
-          type="text"
+        <textarea
           value={textSettings.text}
           onChange={(e) => onUpdate({ text: e.target.value })}
-          className="w-full px-4 py-3 bg-black/20 border border-white/20 rounded-xl text-white backdrop-blur-sm focus:border-blue-400/50 focus:outline-none transition-colors"
+          rows={3}
+          className="w-full px-4 py-3 bg-black/20 border border-white/20 rounded-xl text-white backdrop-blur-sm focus:border-blue-400/50 focus:outline-none transition-colors resize-vertical min-h-[80px]"
           placeholder="Enter your text here..."
         />
       </div>
