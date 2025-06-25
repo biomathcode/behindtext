@@ -21,6 +21,12 @@ export interface BackgroundSettings {
   contrast: number;
   blur: number;
   saturation: number;
+  dropShadowEnabled: boolean;
+  dropShadowBlur: number;
+  dropShadowColor: string;
+  dropShadowOffsetX: number;
+  dropShadowOffsetY: number;
+  dropShadowOpacity: number;
 }
 
 export interface VideoSettings {

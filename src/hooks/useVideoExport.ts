@@ -15,11 +15,12 @@ export const useVideoExport = ({ layerData, canvasDimensions }: UseVideoExportPr
   const recorderRef = useRef<Recorder | null>(null);
 
   const applyImageFilters = (ctx: CanvasRenderingContext2D, image: HTMLImageElement) => {
-    const { brightness, contrast, blur } = layerData.backgroundSettings;
+    const { brightness, contrast, blur, saturation } = layerData.backgroundSettings;
     
     const filters = [
       `brightness(${brightness}%)`,
       `contrast(${contrast}%)`,
+      `saturate(${saturation}%)`,
       blur > 0 ? `blur(${blur}px)` : ''
     ].filter(Boolean).join(' ');
     
@@ -74,9 +75,31 @@ export const useVideoExport = ({ layerData, canvasDimensions }: UseVideoExportPr
       ctx.restore();
     }
 
-    // Layer 3: Background-removed image (foreground)
+    // Layer 3: Background-removed image (foreground) with optional drop shadow
     if (layerData.backgroundRemovedImage) {
+      ctx.save();
+      
+      // Apply drop shadow if enabled
+      if (layerData.backgroundSettings.dropShadowEnabled) {
+        const shadowOpacity = layerData.backgroundSettings.dropShadowOpacity / 100;
+        const shadowColor = layerData.backgroundSettings.dropShadowColor;
+        
+        // Convert hex color to rgba with opacity
+        const hexToRgba = (hex: string, alpha: number) => {
+          const r = parseInt(hex.slice(1, 3), 16);
+          const g = parseInt(hex.slice(3, 5), 16);
+          const b = parseInt(hex.slice(5, 7), 16);
+          return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+        };
+        
+        ctx.shadowColor = hexToRgba(shadowColor, shadowOpacity);
+        ctx.shadowBlur = layerData.backgroundSettings.dropShadowBlur;
+        ctx.shadowOffsetX = layerData.backgroundSettings.dropShadowOffsetX;
+        ctx.shadowOffsetY = layerData.backgroundSettings.dropShadowOffsetY;
+      }
+      
       ctx.drawImage(layerData.backgroundRemovedImage, 0, 0, canvasDimensions.width, canvasDimensions.height);
+      ctx.restore();
     }
   };
 
