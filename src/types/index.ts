@@ -14,6 +14,7 @@ export interface TextSettings {
   shadowColor: string;
   shadowOffsetX: number;
   shadowOffsetY: number;
+  textAlign: 'left' | 'center' | 'right';
 }
 
 export interface BackgroundSettings {

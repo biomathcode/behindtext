@@ -29,6 +29,48 @@ export const useVideoExport = ({ layerData, canvasDimensions }: UseVideoExportPr
     ctx.filter = 'none';
   };
 
+  const drawMultiLineText = (
+    ctx: CanvasRenderingContext2D, 
+    text: string, 
+    x: number, 
+    y: number, 
+    lineHeight: number,
+    textAlign: 'left' | 'center' | 'right'
+  ) => {
+    // Split text by commas and clean up whitespace
+    const lines = text.split(',').map(line => line.trim()).filter(line => line.length > 0);
+    
+    if (lines.length === 0) return;
+
+    // Calculate total text height for vertical centering
+    const totalHeight = (lines.length - 1) * lineHeight;
+    const startY = y - totalHeight / 2;
+
+    lines.forEach((line, index) => {
+      const currentY = startY + (index * lineHeight);
+      
+      // Set text alignment
+      let alignedX = x;
+      if (textAlign === 'left') {
+        ctx.textAlign = 'left';
+        alignedX = x - canvasDimensions.width * 0.4; // Offset for left alignment
+      } else if (textAlign === 'right') {
+        ctx.textAlign = 'right';
+        alignedX = x + canvasDimensions.width * 0.4; // Offset for right alignment
+      } else {
+        ctx.textAlign = 'center';
+      }
+
+      // Draw stroke if enabled
+      if (layerData.textSettings.strokeWidth > 0) {
+        ctx.strokeText(line, alignedX, currentY);
+      }
+      
+      // Draw fill text
+      ctx.fillText(line, alignedX, currentY);
+    });
+  };
+
   const drawFrame = (ctx: CanvasRenderingContext2D, textOpacity: number, textScale: number) => {
     ctx.clearRect(0, 0, canvasDimensions.width, canvasDimensions.height);
 
@@ -45,7 +87,6 @@ export const useVideoExport = ({ layerData, canvasDimensions }: UseVideoExportPr
       ctx.font = `${layerData.textSettings.fontWeight} ${fontSize}px ${layerData.textSettings.fontFamily}`;
       ctx.fillStyle = layerData.textSettings.color;
       ctx.globalAlpha = (layerData.textSettings.opacity / 100) * textOpacity;
-      ctx.textAlign = 'center';
       ctx.textBaseline = 'middle';
 
       const x = (layerData.textSettings.x / 100) * canvasDimensions.width;
@@ -66,11 +107,20 @@ export const useVideoExport = ({ layerData, canvasDimensions }: UseVideoExportPr
       if (layerData.textSettings.strokeWidth > 0) {
         ctx.strokeStyle = layerData.textSettings.strokeColor;
         ctx.lineWidth = layerData.textSettings.strokeWidth;
-        ctx.strokeText(layerData.textSettings.text, 0, 0);
       }
       
-      // Fill text
-      ctx.fillText(layerData.textSettings.text, 0, 0);
+      // Calculate line height based on font size
+      const lineHeight = fontSize * 1.2;
+      
+      // Draw multi-line text
+      drawMultiLineText(
+        ctx, 
+        layerData.textSettings.text, 
+        0, 
+        0, 
+        lineHeight,
+        layerData.textSettings.textAlign
+      );
       
       ctx.restore();
     }
