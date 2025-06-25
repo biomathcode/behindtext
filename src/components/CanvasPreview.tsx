@@ -34,12 +34,12 @@ const CanvasPreview: React.FC<CanvasPreviewProps> = ({
         </div>
         {hasImage && (
           <div className="text-sm text-gray-400 px-3 py-1 rounded-full bg-gray-500/20 border border-gray-400/30 inline-block">
-            {canvasDimensions.width} × {canvasDimensions.height}px
+            {canvasDimensions.width} × {canvasDimensions.height}px (Original Size)
           </div>
         )}
       </div>
       
-      <div className="backdrop-blur-lg bg-black/20 rounded-2xl p-6 flex items-center justify-center min-h-96 border border-white/10">
+      <div className="backdrop-blur-lg bg-black/20 rounded-2xl p-6 flex items-center justify-center min-h-96 border border-white/10 overflow-auto">
         {isProcessing ? (
           <div className="text-center">
             <div className="relative">

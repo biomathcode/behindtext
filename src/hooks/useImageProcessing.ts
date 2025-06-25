@@ -12,24 +12,6 @@ interface UseImageProcessingProps {
 export const useImageProcessing = ({ setLayerData, setCanvasDimensions, setActiveTab }: UseImageProcessingProps) => {
   const [isProcessing, setIsProcessing] = useState(false);
 
-  const calculateCanvasDimensions = (image: HTMLImageElement) => {
-    const maxWidth = 800;
-    const maxHeight = 600;
-    
-    let { width, height } = image;
-    
-    const widthRatio = maxWidth / width;
-    const heightRatio = maxHeight / height;
-    const scale = Math.min(widthRatio, heightRatio);
-    
-    if (scale < 1) {
-      width *= scale;
-      height *= scale;
-    }
-    
-    return { width: Math.round(width), height: Math.round(height) };
-  };
-
   const handleImageUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     return Sentry.startSpan(
       {
@@ -58,7 +40,11 @@ export const useImageProcessing = ({ setLayerData, setCanvasDimensions, setActiv
                 span.setAttribute("image.height", originalImage.height);
                 span.setAttribute("image.aspectRatio", (originalImage.width / originalImage.height).toFixed(2));
 
-                const dimensions = calculateCanvasDimensions(originalImage);
+                // Use the exact image dimensions for the canvas
+                const dimensions = {
+                  width: originalImage.width,
+                  height: originalImage.height
+                };
                 setCanvasDimensions(dimensions);
 
                 // Add canvas dimensions to span
