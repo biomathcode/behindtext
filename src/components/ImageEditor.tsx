@@ -15,7 +15,7 @@ import DragDropOverlay from './DragDropOverlay';
 const ImageEditor: React.FC = () => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [activeTab, setActiveTab] = useState<'upload' | 'edit' | 'export'>('upload');
-  const [editSubTab, setEditSubTab] = useState<'text' | 'background' | 'video'>('text');
+  const [editSubTab, setEditSubTab] = useState<'text' | 'image' | 'video'>('text');
   const [canvasDimensions, setCanvasDimensions] = useState({ width: 800, height: 600 });
   const [isAnimationPlaying, setIsAnimationPlaying] = useState(false);
   const [animatedTextProps, setAnimatedTextProps] = useState({

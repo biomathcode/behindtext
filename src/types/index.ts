@@ -48,4 +48,4 @@ export interface LayerData {
 }
 
 export type TabType = 'upload' | 'edit' | 'export';
-export type EditSubTabType = 'text' | 'background' | 'video';
+export type EditSubTabType = 'text' | 'image' | 'video';
