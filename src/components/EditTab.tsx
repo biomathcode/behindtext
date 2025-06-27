@@ -19,6 +19,8 @@ interface EditTabProps {
   isAnimationPlaying: boolean;
   playAnimation: () => void;
   pauseAnimation: () => void;
+  onCreateSticker?: () => void;
+  isStickerProcessing?: boolean;
 }
 
 const EditTab: React.FC<EditTabProps> = ({
@@ -34,7 +36,9 @@ const EditTab: React.FC<EditTabProps> = ({
   onUpdateVideo,
   isAnimationPlaying,
   playAnimation,
-  pauseAnimation
+  pauseAnimation,
+  onCreateSticker,
+  isStickerProcessing = false
 }) => {
   return (
     <div className="space-y-4">
@@ -51,6 +55,8 @@ const EditTab: React.FC<EditTabProps> = ({
             subjectSettings={subjectSettings}
             onUpdateBackground={onUpdateBackground}
             onUpdateSubject={onUpdateSubject}
+            onCreateSticker={onCreateSticker}
+            isStickerProcessing={isStickerProcessing}
           />
         )}
 
