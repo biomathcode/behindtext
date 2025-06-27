@@ -2,12 +2,14 @@ import React, { useState, useRef, useEffect } from 'react';
 import { Upload, Download, Type, Settings, Image as ImageIcon, Video, Play, Pause } from 'lucide-react';
 import { useImageProcessing } from '../hooks/useImageProcessing';
 import { useVideoExport } from '../hooks/useVideoExport';
+import { useDragAndDrop } from '../hooks/useDragAndDrop';
 import { LayerData } from '../types';
 import CanvasPreview from './CanvasPreview';
 import TabNavigation from './TabNavigation';
 import UploadTab from './UploadTab';
 import EditTab from './EditTab';
 import ExportTab from './ExportTab';
+import DragDropOverlay from './DragDropOverlay';
 
 const ImageEditor: React.FC = () => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -75,6 +77,28 @@ const ImageEditor: React.FC = () => {
     layerData,
     canvasDimensions,
   });
+
+  // Handle file upload from drag and drop
+  const handleFileUpload = (file: File) => {
+    // Create a fake event object to match the expected interface
+    const fakeEvent = {
+      target: {
+        files: [file]
+      }
+    } as React.ChangeEvent<HTMLInputElement>;
+    
+    handleImageUpload(fakeEvent);
+  };
+
+  // Setup drag and drop
+  const { isDragging, setupDragAndDrop } = useDragAndDrop({
+    onImageUpload: handleFileUpload
+  });
+
+  useEffect(() => {
+    const cleanup = setupDragAndDrop();
+    return cleanup;
+  }, [setupDragAndDrop]);
 
   const applyImageFilters = (ctx: CanvasRenderingContext2D, image: HTMLImageElement) => {
     const { brightness, contrast, blur, saturation } = layerData.backgroundSettings;
@@ -364,6 +388,9 @@ const ImageEditor: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 text-white relative overflow-hidden">
+      {/* Drag and Drop Overlay */}
+      <DragDropOverlay isDragging={isDragging} />
+
       {/* SEO Content Header */}
       <header className="relative z-10 text-center py-8 px-4">
         <h1 className="text-4xl md:text-6xl font-bold mb-4 bg-gradient-to-r from-blue-400 via-purple-400 to-pink-400 bg-clip-text text-transparent">
@@ -384,7 +411,7 @@ const ImageEditor: React.FC = () => {
             🎬 Animated Video Export
           </span>
           <span className="px-3 py-1 bg-green-500/20 rounded-full border border-green-400/30">
-            📱 Mobile Friendly
+            📱 Drag & Drop Upload
           </span>
         </div>
       </header>
