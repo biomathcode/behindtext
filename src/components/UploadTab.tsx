@@ -25,7 +25,7 @@ const UploadTab: React.FC<UploadTabProps> = ({ onImageUpload }) => {
             <Upload className="w-8 h-8 text-blue-400" />
           </div>
           <p className="text-gray-200 mb-2 font-medium">Click to upload an image</p>
-          <p className="text-sm text-gray-400">Supports JPG, PNG, WebP formats</p>
+          <p className="text-sm text-gray-400">Supports JPEG and PNG formats only</p>
           <p className="text-xs text-gray-500 mt-2">Aspect ratio will be preserved</p>
         </div>
       </div>
@@ -40,7 +40,7 @@ const UploadTab: React.FC<UploadTabProps> = ({ onImageUpload }) => {
         </div>
         <p className="text-sm text-gray-300 leading-relaxed">
           You can also <strong className="text-purple-300">drag and drop</strong> your image anywhere on this page! 
-          Just drag your image file from your computer and drop it anywhere on the website.
+          Just drag your JPEG or PNG file from your computer and drop it anywhere on the website.
         </p>
         <div className="flex items-center gap-2 mt-3 text-xs text-gray-400">
           <Sparkles className="w-3 h-3 text-purple-400" />
@@ -51,7 +51,7 @@ const UploadTab: React.FC<UploadTabProps> = ({ onImageUpload }) => {
       <input
         ref={fileInputRef}
         type="file"
-        accept="image/*"
+        accept="image/jpeg,image/jpg,image/png"
         onChange={onImageUpload}
         className="hidden"
       />
@@ -62,7 +62,7 @@ const UploadTab: React.FC<UploadTabProps> = ({ onImageUpload }) => {
         <ol className="space-y-3 text-sm text-gray-300">
           <li className="flex items-start gap-3">
             <span className="flex-shrink-0 w-6 h-6 bg-blue-500/20 rounded-full flex items-center justify-center text-xs font-bold text-blue-400">1</span>
-            <span><strong>Upload your image</strong> - Choose any photo where you want to create a text behind effect</span>
+            <span><strong>Upload your image</strong> - Choose any JPEG or PNG photo where you want to create a text behind effect</span>
           </li>
           <li className="flex items-start gap-3">
             <span className="flex-shrink-0 w-6 h-6 bg-purple-500/20 rounded-full flex items-center justify-center text-xs font-bold text-purple-400">2</span>

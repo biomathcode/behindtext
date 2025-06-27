@@ -7,9 +7,18 @@ import { LayerData } from '../types';
 interface UseVideoExportProps {
   layerData: LayerData;
   canvasDimensions: { width: number; height: number };
+  onExportStart?: () => void;
+  onExportSuccess?: () => void;
+  onExportError?: (error: string) => void;
 }
 
-export const useVideoExport = ({ layerData, canvasDimensions }: UseVideoExportProps) => {
+export const useVideoExport = ({ 
+  layerData, 
+  canvasDimensions,
+  onExportStart,
+  onExportSuccess,
+  onExportError 
+}: UseVideoExportProps) => {
   const [isExporting, setIsExporting] = useState(false);
   const recordingCanvasRef = useRef<HTMLCanvasElement | null>(null);
   const recorderRef = useRef<Recorder | null>(null);
@@ -84,10 +93,25 @@ export const useVideoExport = ({ layerData, canvasDimensions }: UseVideoExportPr
       ctx.save();
       
       const fontSize = layerData.textSettings.fontSize * textScale;
+      
+      // Apply letter and word spacing
+      const letterSpacing = layerData.textSettings.letterSpacing;
+      const wordSpacing = layerData.textSettings.wordSpacing;
+      
       ctx.font = `${layerData.textSettings.fontWeight} ${fontSize}px ${layerData.textSettings.fontFamily}`;
       ctx.fillStyle = layerData.textSettings.color;
       ctx.globalAlpha = (layerData.textSettings.opacity / 100) * textOpacity;
       ctx.textBaseline = 'middle';
+      
+      // Apply letter spacing if supported
+      if (letterSpacing !== 0) {
+        ctx.letterSpacing = `${letterSpacing}px`;
+      }
+      
+      // Apply word spacing if supported
+      if (wordSpacing !== 0) {
+        ctx.wordSpacing = `${wordSpacing}px`;
+      }
 
       const x = (layerData.textSettings.x / 100) * canvasDimensions.width;
       const y = (layerData.textSettings.y / 100) * canvasDimensions.height;
@@ -168,6 +192,11 @@ export const useVideoExport = ({ layerData, canvasDimensions }: UseVideoExportPr
         span.setAttribute("canvas.height", canvasDimensions.height);
 
         setIsExporting(true);
+        
+        // Call export start callback
+        if (onExportStart) {
+          onExportStart();
+        }
 
         try {
           // Create a new canvas for recording
@@ -239,6 +268,11 @@ export const useVideoExport = ({ layerData, canvasDimensions }: UseVideoExportPr
                 if (recorderRef.current && recorderRef.current.status === RecorderStatus.Recording) {
                   await recorderRef.current.stop();
                   span.setAttribute("recording.completed", true);
+                  
+                  // Call success callback
+                  if (onExportSuccess) {
+                    onExportSuccess();
+                  }
                 }
                 setIsExporting(false);
               }, 100);
@@ -285,6 +319,11 @@ export const useVideoExport = ({ layerData, canvasDimensions }: UseVideoExportPr
           Sentry.captureException(error);
           setIsExporting(false);
           span.setAttribute("export.success", false);
+          
+          // Call error callback
+          if (onExportError) {
+            onExportError(error instanceof Error ? error.message : 'Failed to export video');
+          }
         }
       }
     );

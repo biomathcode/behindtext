@@ -8,6 +8,11 @@ export const useDragAndDrop = ({ onImageUpload }: UseDragAndDropProps) => {
   const [isDragging, setIsDragging] = useState(false);
   const dragCounter = useRef(0);
 
+  const validateFileFormat = (file: File): boolean => {
+    const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png'];
+    return allowedTypes.includes(file.type.toLowerCase());
+  };
+
   const handleDragEnter = useCallback((e: DragEvent) => {
     e.preventDefault();
     e.stopPropagation();
@@ -15,7 +20,18 @@ export const useDragAndDrop = ({ onImageUpload }: UseDragAndDropProps) => {
     dragCounter.current++;
     
     if (e.dataTransfer?.items && e.dataTransfer.items.length > 0) {
-      setIsDragging(true);
+      // Check if any of the dragged items is a valid image file
+      const hasValidImage = Array.from(e.dataTransfer.items).some(item => {
+        return item.kind === 'file' && (
+          item.type === 'image/jpeg' || 
+          item.type === 'image/jpg' || 
+          item.type === 'image/png'
+        );
+      });
+      
+      if (hasValidImage) {
+        setIsDragging(true);
+      }
     }
   }, []);
 
@@ -45,8 +61,8 @@ export const useDragAndDrop = ({ onImageUpload }: UseDragAndDropProps) => {
     if (e.dataTransfer?.files && e.dataTransfer.files.length > 0) {
       const file = e.dataTransfer.files[0];
       
-      // Check if it's an image file
-      if (file.type.startsWith('image/')) {
+      // Validate file format
+      if (validateFileFormat(file)) {
         onImageUpload(file);
       }
       

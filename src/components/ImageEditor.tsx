@@ -1,5 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Upload, Download, Type, Settings, Image as ImageIcon, Video, Play, Pause } from 'lucide-react';
+import { toast, Toaster } from 'sonner';
 import { useImageProcessing } from '../hooks/useImageProcessing';
 import { useVideoExport } from '../hooks/useVideoExport';
 import { useDragAndDrop } from '../hooks/useDragAndDrop';
@@ -66,20 +67,28 @@ const ImageEditor: React.FC = () => {
     }
   });
 
-  // Use custom hooks
-  const { isProcessing, handleImageUpload } = useImageProcessing({
-    setLayerData,
-    setCanvasDimensions,
-    setActiveTab,
-  });
+  // Validate file format
+  const validateFileFormat = (file: File): boolean => {
+    const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png'];
+    return allowedTypes.includes(file.type.toLowerCase());
+  };
 
-  const { isExporting, downloadVideo } = useVideoExport({
-    layerData,
-    canvasDimensions,
-  });
-
-  // Handle file upload from drag and drop
+  // Handle file upload from drag and drop or file input
   const handleFileUpload = (file: File) => {
+    if (!validateFileFormat(file)) {
+      toast.error('Invalid file format', {
+        description: 'Please upload only JPEG or PNG images.',
+        duration: 4000,
+      });
+      return;
+    }
+
+    // Show upload started toast
+    toast.loading('Uploading image...', {
+      id: 'upload-progress',
+      description: 'Processing your image with AI background removal',
+    });
+
     // Create a fake event object to match the expected interface
     const fakeEvent = {
       target: {
@@ -89,6 +98,76 @@ const ImageEditor: React.FC = () => {
     
     handleImageUpload(fakeEvent);
   };
+
+  // Handle file input change
+  const handleFileInputChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    if (!validateFileFormat(file)) {
+      toast.error('Invalid file format', {
+        description: 'Please upload only JPEG or PNG images.',
+        duration: 4000,
+      });
+      // Clear the input
+      event.target.value = '';
+      return;
+    }
+
+    // Show upload started toast
+    toast.loading('Uploading image...', {
+      id: 'upload-progress',
+      description: 'Processing your image with AI background removal',
+    });
+
+    handleImageUpload(event);
+  };
+
+  // Use custom hooks
+  const { isProcessing, handleImageUpload } = useImageProcessing({
+    setLayerData,
+    setCanvasDimensions,
+    setActiveTab,
+    onSuccess: () => {
+      toast.success('Image uploaded successfully!', {
+        id: 'upload-progress',
+        description: 'Background removed with AI. Ready to add text effects.',
+        duration: 3000,
+      });
+    },
+    onError: (error: string) => {
+      toast.error('Upload failed', {
+        id: 'upload-progress',
+        description: error || 'Please try again with a different image.',
+        duration: 4000,
+      });
+    },
+  });
+
+  const { isExporting, downloadVideo } = useVideoExport({
+    layerData,
+    canvasDimensions,
+    onExportStart: () => {
+      toast.loading('Generating video...', {
+        id: 'export-progress',
+        description: 'Creating your animated text behind image effect',
+      });
+    },
+    onExportSuccess: () => {
+      toast.success('Video exported successfully!', {
+        id: 'export-progress',
+        description: 'Your animated video has been downloaded.',
+        duration: 3000,
+      });
+    },
+    onExportError: (error: string) => {
+      toast.error('Export failed', {
+        id: 'export-progress',
+        description: error || 'Please try again.',
+        duration: 4000,
+      });
+    },
+  });
 
   // Setup drag and drop
   const { isDragging, setupDragAndDrop } = useDragAndDrop({
@@ -359,6 +438,11 @@ const ImageEditor: React.FC = () => {
     const tl = createAnimation();
     tl.play();
     setIsAnimationPlaying(true);
+    
+    toast.success('Animation preview started', {
+      description: 'Preview your text animation effects',
+      duration: 2000,
+    });
   };
 
   const pauseAnimation = () => {
@@ -366,6 +450,10 @@ const ImageEditor: React.FC = () => {
       animationRef.current.pause();
     }
     setIsAnimationPlaying(false);
+    
+    toast.info('Animation paused', {
+      duration: 1500,
+    });
   };
 
   const stopAnimation = () => {
@@ -380,14 +468,42 @@ const ImageEditor: React.FC = () => {
     const canvas = canvasRef.current;
     if (!canvas) return;
 
-    const link = document.createElement('a');
-    link.download = `behindtext-effect.${format}`;
-    link.href = canvas.toDataURL(`image/${format}`, format === 'jpeg' ? 0.9 : undefined);
-    link.click();
+    try {
+      const link = document.createElement('a');
+      link.download = `behindtext-effect.${format}`;
+      link.href = canvas.toDataURL(`image/${format}`, format === 'jpeg' ? 0.9 : undefined);
+      link.click();
+      
+      toast.success(`${format.toUpperCase()} downloaded!`, {
+        description: 'Your text behind image effect has been saved.',
+        duration: 3000,
+      });
+    } catch (error) {
+      toast.error('Download failed', {
+        description: 'Please try again.',
+        duration: 3000,
+      });
+    }
   };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 text-white relative overflow-hidden">
+      {/* Toast Container */}
+      <Toaster 
+        position="top-right" 
+        richColors 
+        theme="dark"
+        toastOptions={{
+          style: {
+            background: 'rgba(17, 24, 39, 0.95)',
+            backdropFilter: 'blur(24px)',
+            border: '1px solid rgba(255, 255, 255, 0.1)',
+            borderRadius: '12px',
+            color: 'white',
+          },
+        }}
+      />
+      
       {/* Drag and Drop Overlay */}
       <DragDropOverlay isDragging={isDragging} />
 
@@ -459,7 +575,7 @@ const ImageEditor: React.FC = () => {
 
               <div className="p-6">
                 {activeTab === 'upload' && (
-                  <UploadTab onImageUpload={handleImageUpload} />
+                  <UploadTab onImageUpload={handleFileInputChange} />
                 )}
 
                 {activeTab === 'edit' && (

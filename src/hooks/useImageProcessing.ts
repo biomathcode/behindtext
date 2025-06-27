@@ -7,9 +7,17 @@ interface UseImageProcessingProps {
   setLayerData: React.Dispatch<React.SetStateAction<LayerData>>;
   setCanvasDimensions: React.Dispatch<React.SetStateAction<{ width: number; height: number }>>;
   setActiveTab: React.Dispatch<React.SetStateAction<'upload' | 'edit' | 'export'>>;
+  onSuccess?: () => void;
+  onError?: (error: string) => void;
 }
 
-export const useImageProcessing = ({ setLayerData, setCanvasDimensions, setActiveTab }: UseImageProcessingProps) => {
+export const useImageProcessing = ({ 
+  setLayerData, 
+  setCanvasDimensions, 
+  setActiveTab,
+  onSuccess,
+  onError 
+}: UseImageProcessingProps) => {
   const [isProcessing, setIsProcessing] = useState(false);
 
   const handleImageUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -84,6 +92,12 @@ export const useImageProcessing = ({ setLayerData, setCanvasDimensions, setActiv
                         
                         span.setAttribute("processing.success", true);
                         span.setAttribute("processing.total_duration_ms", Math.round(performance.now() - startTime));
+                        
+                        // Call success callback
+                        if (onSuccess) {
+                          onSuccess();
+                        }
+                        
                         resolve();
                       };
                       
@@ -120,6 +134,11 @@ export const useImageProcessing = ({ setLayerData, setCanvasDimensions, setActiv
           span.setAttribute("processing.success", false);
           span.setAttribute("error.message", error instanceof Error ? error.message : 'Unknown error');
           setIsProcessing(false);
+          
+          // Call error callback
+          if (onError) {
+            onError(error instanceof Error ? error.message : 'Failed to process image');
+          }
         }
       }
     );

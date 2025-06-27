@@ -30,7 +30,7 @@ const DragDropOverlay: React.FC<DragDropOverlayProps> = ({ isDragging }) => {
         
         <div className="flex items-center justify-center gap-2 text-sm text-gray-400">
           <div className="w-2 h-2 bg-purple-400 rounded-full animate-pulse"></div>
-          <span>Supports JPG, PNG, WebP formats</span>
+          <span>Supports JPEG and PNG formats only</span>
           <div className="w-2 h-2 bg-blue-400 rounded-full animate-pulse animation-delay-500"></div>
         </div>
       </div>
