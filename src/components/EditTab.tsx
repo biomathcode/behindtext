@@ -33,28 +33,28 @@ const EditTab: React.FC<EditTabProps> = ({
   pauseAnimation
 }) => {
   return (
-    <div className="space-y-6">
-      <h3 className="text-xl font-semibold mb-6 text-white">Edit Your Composition</h3>
-      
+    <div className="space-y-4">
       <EditSubTabNavigation editSubTab={editSubTab} setEditSubTab={setEditSubTab} />
 
-      {editSubTab === 'text' && (
-        <TextControls textSettings={textSettings} onUpdate={onUpdateText} />
-      )}
+      <div className="max-h-[70vh] overflow-y-auto pr-2 space-y-4">
+        {editSubTab === 'text' && (
+          <TextControls textSettings={textSettings} onUpdate={onUpdateText} />
+        )}
 
-      {editSubTab === 'background' && (
-        <BackgroundControls backgroundSettings={backgroundSettings} onUpdate={onUpdateBackground} />
-      )}
+        {editSubTab === 'background' && (
+          <BackgroundControls backgroundSettings={backgroundSettings} onUpdate={onUpdateBackground} />
+        )}
 
-      {editSubTab === 'video' && (
-        <VideoControls 
-          videoSettings={videoSettings} 
-          onUpdate={onUpdateVideo} 
-          isAnimationPlaying={isAnimationPlaying}
-          playAnimation={playAnimation}
-          pauseAnimation={pauseAnimation}
-        />
-      )}
+        {editSubTab === 'video' && (
+          <VideoControls 
+            videoSettings={videoSettings} 
+            onUpdate={onUpdateVideo} 
+            isAnimationPlaying={isAnimationPlaying}
+            playAnimation={playAnimation}
+            pauseAnimation={pauseAnimation}
+          />
+        )}
+      </div>
     </div>
   );
 };

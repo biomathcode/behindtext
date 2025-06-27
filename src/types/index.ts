@@ -15,6 +15,8 @@ export interface TextSettings {
   shadowOffsetX: number;
   shadowOffsetY: number;
   textAlign: 'left' | 'center' | 'right';
+  letterSpacing: number;
+  wordSpacing: number;
 }
 
 export interface BackgroundSettings {

@@ -1,6 +1,7 @@
 import React from 'react';
 import { Play, Pause } from 'lucide-react';
 import { VideoSettings } from '../types';
+import NumberInput from './NumberInput';
 
 interface VideoControlsProps {
   videoSettings: VideoSettings;
@@ -19,65 +20,66 @@ const VideoControls: React.FC<VideoControlsProps> = ({
 }) => {
   return (
     <div className="space-y-6">
-      <div className="space-y-3">
-        <label className="block text-sm font-medium text-gray-200">Animation Type</label>
-        <select
-          value={videoSettings.animationType}
-          onChange={(e) => onUpdate({ animationType: e.target.value as VideoSettings['animationType'] })}
-          className="w-full px-4 py-3 bg-black/20 border border-white/20 rounded-xl text-white backdrop-blur-sm focus:border-orange-400/50 focus:outline-none transition-colors"
-        >
-          <option value="fade-in" className="bg-gray-800">Fade In</option>
-          <option value="fade-out" className="bg-gray-800">Fade Out</option>
-          <option value="zoom-in" className="bg-gray-800">Zoom In</option>
-          <option value="zoom-out" className="bg-gray-800">Zoom Out</option>
-        </select>
-      </div>
+      {/* Animation Settings */}
+      <div className="space-y-3 p-4 bg-black/10 rounded-xl border border-white/10">
+        <h4 className="text-sm font-semibold text-white uppercase tracking-wide">Animation</h4>
+        
+        <div className="space-y-2">
+          <label className="block text-xs font-medium text-gray-300 uppercase tracking-wide">Type</label>
+          <select
+            value={videoSettings.animationType}
+            onChange={(e) => onUpdate({ animationType: e.target.value as VideoSettings['animationType'] })}
+            className="w-full h-8 px-3 bg-black/20 border border-white/20 rounded-lg text-white text-sm backdrop-blur-sm focus:border-orange-400/50 focus:outline-none transition-colors"
+          >
+            <option value="fade-in" className="bg-gray-800">Fade In</option>
+            <option value="fade-out" className="bg-gray-800">Fade Out</option>
+            <option value="zoom-in" className="bg-gray-800">Zoom In</option>
+            <option value="zoom-out" className="bg-gray-800">Zoom Out</option>
+          </select>
+        </div>
 
-      <div className="space-y-3">
-        <label className="block text-sm font-medium text-gray-200">
-          Animation Duration: <span className="text-orange-400">{videoSettings.animationDuration}s</span>
-        </label>
-        <input
-          type="range"
-          min="0.5"
-          max="5"
-          step="0.5"
+        <NumberInput
+          label="Duration"
           value={videoSettings.animationDuration}
-          onChange={(e) => onUpdate({ animationDuration: parseFloat(e.target.value) })}
-          className="w-full h-2 bg-black/20 rounded-lg appearance-none cursor-pointer slider-orange"
+          onChange={(value) => onUpdate({ animationDuration: value })}
+          min={0.5}
+          max={5}
+          step={0.5}
+          unit="s"
         />
+
+        <div className="space-y-2">
+          <label className="block text-xs font-medium text-gray-300 uppercase tracking-wide">Easing</label>
+          <select
+            value={videoSettings.easing}
+            onChange={(e) => onUpdate({ easing: e.target.value as VideoSettings['easing'] })}
+            className="w-full h-8 px-3 bg-black/20 border border-white/20 rounded-lg text-white text-sm backdrop-blur-sm focus:border-orange-400/50 focus:outline-none transition-colors"
+          >
+            <option value="ease-in" className="bg-gray-800">Ease In</option>
+            <option value="ease-out" className="bg-gray-800">Ease Out</option>
+            <option value="ease-in-out" className="bg-gray-800">Ease In-Out</option>
+            <option value="linear" className="bg-gray-800">Linear</option>
+          </select>
+        </div>
       </div>
 
-      <div className="space-y-3">
-        <label className="block text-sm font-medium text-gray-200">Easing</label>
-        <select
-          value={videoSettings.easing}
-          onChange={(e) => onUpdate({ easing: e.target.value as VideoSettings['easing'] })}
-          className="w-full px-4 py-3 bg-black/20 border border-white/20 rounded-xl text-white backdrop-blur-sm focus:border-orange-400/50 focus:outline-none transition-colors"
-        >
-          <option value="ease-in" className="bg-gray-800">Ease In</option>
-          <option value="ease-out" className="bg-gray-800">Ease Out</option>
-          <option value="ease-in-out" className="bg-gray-800">Ease In-Out</option>
-          <option value="linear" className="bg-gray-800">Linear</option>
-        </select>
-      </div>
-
-      <div className="space-y-3">
-        <label className="block text-sm font-medium text-gray-200">
-          Video Duration: <span className="text-orange-400">{videoSettings.videoDuration}s</span>
-        </label>
-        <input
-          type="range"
-          min="5"
-          max="30"
+      {/* Video Settings */}
+      <div className="space-y-3 p-4 bg-black/10 rounded-xl border border-white/10">
+        <h4 className="text-sm font-semibold text-white uppercase tracking-wide">Video</h4>
+        
+        <NumberInput
+          label="Duration"
           value={videoSettings.videoDuration}
-          onChange={(e) => onUpdate({ videoDuration: parseInt(e.target.value) })}
-          className="w-full h-2 bg-black/20 rounded-lg appearance-none cursor-pointer slider-orange"
+          onChange={(value) => onUpdate({ videoDuration: value })}
+          min={5}
+          max={30}
+          unit="s"
         />
       </div>
 
-      <div className="space-y-4">
-        <h4 className="text-lg font-medium text-white">Animation Preview</h4>
+      {/* Preview Controls */}
+      <div className="space-y-3 p-4 bg-black/10 rounded-xl border border-white/10">
+        <h4 className="text-sm font-semibold text-white uppercase tracking-wide">Preview</h4>
         <div className="flex gap-3">
           <button
             onClick={playAnimation}

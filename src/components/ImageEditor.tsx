@@ -41,6 +41,8 @@ const ImageEditor: React.FC = () => {
       shadowOffsetX: 2,
       shadowOffsetY: 2,
       textAlign: 'center',
+      letterSpacing: 0,
+      wordSpacing: 0,
     },
     backgroundSettings: {
       brightness: 100,
@@ -158,10 +160,25 @@ const ImageEditor: React.FC = () => {
       }
       
       const fontSize = layerData.textSettings.fontSize * textScale;
+      
+      // Apply letter and word spacing
+      const letterSpacing = layerData.textSettings.letterSpacing;
+      const wordSpacing = layerData.textSettings.wordSpacing;
+      
       ctx.font = `${layerData.textSettings.fontWeight} ${fontSize}px ${layerData.textSettings.fontFamily}`;
       ctx.fillStyle = layerData.textSettings.color;
       ctx.globalAlpha = textOpacity;
       ctx.textBaseline = 'middle';
+      
+      // Apply letter spacing if supported
+      if (letterSpacing !== 0) {
+        ctx.letterSpacing = `${letterSpacing}px`;
+      }
+      
+      // Apply word spacing if supported
+      if (wordSpacing !== 0) {
+        ctx.wordSpacing = `${wordSpacing}px`;
+      }
 
       const x = (layerData.textSettings.x / 100) * canvas.width;
       const y = (layerData.textSettings.y / 100) * canvas.height;

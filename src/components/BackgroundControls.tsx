@@ -1,5 +1,7 @@
 import React from 'react';
 import { BackgroundSettings } from '../types';
+import ColorPicker from './ColorPicker';
+import NumberInput from './NumberInput';
 
 interface BackgroundControlsProps {
   backgroundSettings: BackgroundSettings;
@@ -9,167 +11,109 @@ interface BackgroundControlsProps {
 const BackgroundControls: React.FC<BackgroundControlsProps> = ({ backgroundSettings, onUpdate }) => {
   return (
     <div className="space-y-6">
-      {/* Brightness */}
-      <div className="space-y-3">
-        <label className="block text-sm font-medium text-gray-200">
-          Brightness: <span className="text-purple-400">{backgroundSettings.brightness}%</span>
-        </label>
-        <input
-          type="range"
-          min="0"
-          max="200"
-          value={backgroundSettings.brightness}
-          onChange={(e) => onUpdate({ brightness: parseInt(e.target.value) })}
-          className="w-full h-2 bg-black/20 rounded-lg appearance-none cursor-pointer slider-purple"
-        />
-      </div>
-
-      {/* Contrast */}
-      <div className="space-y-3">
-        <label className="block text-sm font-medium text-gray-200">
-          Contrast: <span className="text-purple-400">{backgroundSettings.contrast}%</span>
-        </label>
-        <input
-          type="range"
-          min="0"
-          max="200"
-          value={backgroundSettings.contrast}
-          onChange={(e) => onUpdate({ contrast: parseInt(e.target.value) })}
-          className="w-full h-2 bg-black/20 rounded-lg appearance-none cursor-pointer slider-purple"
-        />
-      </div>
-
-      {/* Saturation */}
-      <div className="space-y-3">
-        <label className="block text-sm font-medium text-gray-200">
-          Saturation: <span className="text-purple-400">{backgroundSettings.saturation}%</span>
-        </label>
-        <input
-          type="range"
-          min="0"
-          max="200"
-          value={backgroundSettings.saturation}
-          onChange={(e) => onUpdate({ saturation: parseInt(e.target.value) })}
-          className="w-full h-2 bg-black/20 rounded-lg appearance-none cursor-pointer slider-purple"
-        />
-      </div>
-
-      {/* Blur */}
-      <div className="space-y-3">
-        <label className="block text-sm font-medium text-gray-200">
-          Blur: <span className="text-purple-400">{backgroundSettings.blur}px</span>
-        </label>
-        <input
-          type="range"
-          min="0"
-          max="20"
-          value={backgroundSettings.blur}
-          onChange={(e) => onUpdate({ blur: parseInt(e.target.value) })}
-          className="w-full h-2 bg-black/20 rounded-lg appearance-none cursor-pointer slider-purple"
-        />
-      </div>
-
-      {/* Drop Shadow Section */}
-      <div className="space-y-4 p-4 bg-black/20 rounded-xl border border-purple-400/30">
-        <h4 className="text-lg font-medium text-white flex items-center gap-2">
-          Subject Drop Shadow
-        </h4>
+      {/* Image Filters */}
+      <div className="space-y-3 p-4 bg-black/10 rounded-xl border border-white/10">
+        <h4 className="text-sm font-semibold text-white uppercase tracking-wide">Image Filters</h4>
         
-        {/* Enable Drop Shadow */}
-        <div className="flex items-center gap-3">
-          <input
-            type="checkbox"
-            id="dropShadowEnabled"
-            checked={backgroundSettings.dropShadowEnabled}
-            onChange={(e) => onUpdate({ dropShadowEnabled: e.target.checked })}
-            className="w-4 h-4 text-purple-600 bg-black/20 border-purple-400/30 rounded focus:ring-purple-500 focus:ring-2"
+        <div className="grid grid-cols-2 gap-3">
+          <NumberInput
+            label="Brightness"
+            value={backgroundSettings.brightness}
+            onChange={(value) => onUpdate({ brightness: value })}
+            min={0}
+            max={200}
+            unit="%"
           />
-          <label htmlFor="dropShadowEnabled" className="text-sm font-medium text-gray-200">
-            Enable Subject Highlighting
-          </label>
+          <NumberInput
+            label="Contrast"
+            value={backgroundSettings.contrast}
+            onChange={(value) => onUpdate({ contrast: value })}
+            min={0}
+            max={200}
+            unit="%"
+          />
         </div>
 
+        <div className="grid grid-cols-2 gap-3">
+          <NumberInput
+            label="Saturation"
+            value={backgroundSettings.saturation}
+            onChange={(value) => onUpdate({ saturation: value })}
+            min={0}
+            max={200}
+            unit="%"
+          />
+          <NumberInput
+            label="Blur"
+            value={backgroundSettings.blur}
+            onChange={(value) => onUpdate({ blur: value })}
+            min={0}
+            max={20}
+            unit="px"
+          />
+        </div>
+      </div>
+
+      {/* Subject Drop Shadow */}
+      <div className="space-y-3 p-4 bg-black/10 rounded-xl border border-white/10">
+        <div className="flex items-center justify-between">
+          <h4 className="text-sm font-semibold text-white uppercase tracking-wide">Subject Shadow</h4>
+          <label className="relative inline-flex items-center cursor-pointer">
+            <input
+              type="checkbox"
+              checked={backgroundSettings.dropShadowEnabled}
+              onChange={(e) => onUpdate({ dropShadowEnabled: e.target.checked })}
+              className="sr-only peer"
+            />
+            <div className="w-9 h-5 bg-black/20 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-purple-500 border border-white/20"></div>
+          </label>
+        </div>
+        
         {backgroundSettings.dropShadowEnabled && (
-          <>
-            {/* Shadow Blur */}
-            <div className="space-y-3">
-              <label className="block text-sm font-medium text-gray-200">
-                Shadow Blur: <span className="text-purple-400">{backgroundSettings.dropShadowBlur}px</span>
-              </label>
-              <input
-                type="range"
-                min="0"
-                max="50"
-                value={backgroundSettings.dropShadowBlur}
-                onChange={(e) => onUpdate({ dropShadowBlur: parseInt(e.target.value) })}
-                className="w-full h-2 bg-black/20 rounded-lg appearance-none cursor-pointer slider-purple"
+          <div className="space-y-3">
+            <NumberInput
+              label="Blur"
+              value={backgroundSettings.dropShadowBlur}
+              onChange={(value) => onUpdate({ dropShadowBlur: value })}
+              min={0}
+              max={50}
+              unit="px"
+            />
+
+            <NumberInput
+              label="Opacity"
+              value={backgroundSettings.dropShadowOpacity}
+              onChange={(value) => onUpdate({ dropShadowOpacity: value })}
+              min={0}
+              max={100}
+              unit="%"
+            />
+
+            <ColorPicker
+              label="Color"
+              color={backgroundSettings.dropShadowColor}
+              onChange={(color) => onUpdate({ dropShadowColor: color })}
+            />
+
+            <div className="grid grid-cols-2 gap-3">
+              <NumberInput
+                label="Offset X"
+                value={backgroundSettings.dropShadowOffsetX}
+                onChange={(value) => onUpdate({ dropShadowOffsetX: value })}
+                min={-50}
+                max={50}
+                unit="px"
+              />
+              <NumberInput
+                label="Offset Y"
+                value={backgroundSettings.dropShadowOffsetY}
+                onChange={(value) => onUpdate({ dropShadowOffsetY: value })}
+                min={-50}
+                max={50}
+                unit="px"
               />
             </div>
-
-            {/* Shadow Opacity */}
-            <div className="space-y-3">
-              <label className="block text-sm font-medium text-gray-200">
-                Shadow Opacity: <span className="text-purple-400">{backgroundSettings.dropShadowOpacity}%</span>
-              </label>
-              <input
-                type="range"
-                min="0"
-                max="100"
-                value={backgroundSettings.dropShadowOpacity}
-                onChange={(e) => onUpdate({ dropShadowOpacity: parseInt(e.target.value) })}
-                className="w-full h-2 bg-black/20 rounded-lg appearance-none cursor-pointer slider-purple"
-              />
-            </div>
-
-            {/* Shadow Color */}
-            <div className="space-y-3">
-              <label className="block text-sm font-medium text-gray-200">Shadow Color</label>
-              <div className="flex gap-3">
-                <input
-                  type="color"
-                  value={backgroundSettings.dropShadowColor}
-                  onChange={(e) => onUpdate({ dropShadowColor: e.target.value })}
-                  className="w-12 h-12 bg-black/20 border border-white/20 rounded-xl cursor-pointer"
-                />
-                <input
-                  type="text"
-                  value={backgroundSettings.dropShadowColor}
-                  onChange={(e) => onUpdate({ dropShadowColor: e.target.value })}
-                  className="flex-1 px-4 py-3 bg-black/20 border border-white/20 rounded-xl text-white backdrop-blur-sm focus:border-purple-400/50 focus:outline-none transition-colors"
-                />
-              </div>
-            </div>
-
-            {/* Shadow Offset */}
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-3">
-                <label className="block text-sm font-medium text-gray-200">
-                  Shadow X: <span className="text-purple-400">{backgroundSettings.dropShadowOffsetX}px</span>
-                </label>
-                <input
-                  type="range"
-                  min="-50"
-                  max="50"
-                  value={backgroundSettings.dropShadowOffsetX}
-                  onChange={(e) => onUpdate({ dropShadowOffsetX: parseInt(e.target.value) })}
-                  className="w-full h-2 bg-black/20 rounded-lg appearance-none cursor-pointer slider-purple"
-                />
-              </div>
-              <div className="space-y-3">
-                <label className="block text-sm font-medium text-gray-200">
-                  Shadow Y: <span className="text-purple-400">{backgroundSettings.dropShadowOffsetY}px</span>
-                </label>
-                <input
-                  type="range"
-                  min="-50"
-                  max="50"
-                  value={backgroundSettings.dropShadowOffsetY}
-                  onChange={(e) => onUpdate({ dropShadowOffsetY: parseInt(e.target.value) })}
-                  className="w-full h-2 bg-black/20 rounded-lg appearance-none cursor-pointer slider-purple"
-                />
-              </div>
-            </div>
-          </>
+          </div>
         )}
       </div>
 
