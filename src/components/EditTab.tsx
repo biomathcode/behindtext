@@ -1,5 +1,5 @@
 import React from 'react';
-import { TextSettings, BackgroundSettings, VideoSettings } from '../types';
+import { TextSettings, BackgroundSettings, SubjectSettings, VideoSettings } from '../types';
 import EditSubTabNavigation from './EditSubTabNavigation';
 import TextControls from './TextControls';
 import ImageControls from './ImageControls';
@@ -10,9 +10,11 @@ interface EditTabProps {
   setEditSubTab: (tab: 'text' | 'image' | 'video') => void;
   textSettings: TextSettings;
   backgroundSettings: BackgroundSettings;
+  subjectSettings: SubjectSettings;
   videoSettings: VideoSettings;
   onUpdateText: (updates: Partial<TextSettings>) => void;
   onUpdateBackground: (updates: Partial<BackgroundSettings>) => void;
+  onUpdateSubject: (updates: Partial<SubjectSettings>) => void;
   onUpdateVideo: (updates: Partial<VideoSettings>) => void;
   isAnimationPlaying: boolean;
   playAnimation: () => void;
@@ -24,9 +26,11 @@ const EditTab: React.FC<EditTabProps> = ({
   setEditSubTab,
   textSettings,
   backgroundSettings,
+  subjectSettings,
   videoSettings,
   onUpdateText,
   onUpdateBackground,
+  onUpdateSubject,
   onUpdateVideo,
   isAnimationPlaying,
   playAnimation,
@@ -42,7 +46,12 @@ const EditTab: React.FC<EditTabProps> = ({
         )}
 
         {editSubTab === 'image' && (
-          <ImageControls backgroundSettings={backgroundSettings} onUpdate={onUpdateBackground} />
+          <ImageControls 
+            backgroundSettings={backgroundSettings} 
+            subjectSettings={subjectSettings}
+            onUpdateBackground={onUpdateBackground}
+            onUpdateSubject={onUpdateSubject}
+          />
         )}
 
         {editSubTab === 'video' && (

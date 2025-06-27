@@ -20,16 +20,57 @@ export interface TextSettings {
 }
 
 export interface BackgroundSettings {
+  // Image Opacity
+  opacity: number;
+  
+  // Image Filters
   brightness: number;
   contrast: number;
   blur: number;
   saturation: number;
+  
+  // Shadow
+  shadowEnabled: boolean;
+  shadowBlur: number;
+  shadowColor: string;
+  shadowOffsetX: number;
+  shadowOffsetY: number;
+  shadowOpacity: number;
+  
+  // Transformations
+  rotation: number;
+  scale: number;
+  
+  // Subject-specific settings (for foreground image)
   dropShadowEnabled: boolean;
   dropShadowBlur: number;
   dropShadowColor: string;
   dropShadowOffsetX: number;
   dropShadowOffsetY: number;
   dropShadowOpacity: number;
+}
+
+export interface SubjectSettings {
+  // Image Opacity
+  opacity: number;
+  
+  // Image Filters
+  brightness: number;
+  contrast: number;
+  blur: number;
+  saturation: number;
+  
+  // Shadow
+  shadowEnabled: boolean;
+  shadowBlur: number;
+  shadowColor: string;
+  shadowOffsetX: number;
+  shadowOffsetY: number;
+  shadowOpacity: number;
+  
+  // Transformations
+  rotation: number;
+  scale: number;
 }
 
 export interface VideoSettings {
@@ -44,6 +85,7 @@ export interface LayerData {
   backgroundRemovedImage: HTMLImageElement | null;
   textSettings: TextSettings;
   backgroundSettings: BackgroundSettings;
+  subjectSettings: SubjectSettings;
   videoSettings: VideoSettings;
 }
 

@@ -23,9 +23,40 @@ export const useVideoExport = ({
   const recordingCanvasRef = useRef<HTMLCanvasElement | null>(null);
   const recorderRef = useRef<Recorder | null>(null);
 
-  const applyImageFilters = (ctx: CanvasRenderingContext2D, image: HTMLImageElement) => {
-    const { brightness, contrast, blur, saturation } = layerData.backgroundSettings;
+  const applyImageFilters = (
+    ctx: CanvasRenderingContext2D, 
+    image: HTMLImageElement, 
+    settings: { brightness: number; contrast: number; blur: number; saturation: number; opacity: number; rotation: number; scale: number; shadowEnabled?: boolean; shadowBlur?: number; shadowColor?: string; shadowOffsetX?: number; shadowOffsetY?: number; shadowOpacity?: number }
+  ) => {
+    const { brightness, contrast, blur, saturation, opacity, rotation, scale, shadowEnabled, shadowBlur, shadowColor, shadowOffsetX, shadowOffsetY, shadowOpacity } = settings;
     
+    ctx.save();
+    
+    // Apply transformations
+    const centerX = canvasDimensions.width / 2;
+    const centerY = canvasDimensions.height / 2;
+    
+    ctx.translate(centerX, centerY);
+    ctx.rotate((rotation * Math.PI) / 180);
+    ctx.scale(scale, scale);
+    ctx.translate(-centerX, -centerY);
+    
+    // Apply shadow if enabled
+    if (shadowEnabled && shadowBlur && shadowColor && shadowOffsetX !== undefined && shadowOffsetY !== undefined && shadowOpacity !== undefined) {
+      const hexToRgba = (hex: string, alpha: number) => {
+        const r = parseInt(hex.slice(1, 3), 16);
+        const g = parseInt(hex.slice(3, 5), 16);
+        const b = parseInt(hex.slice(5, 7), 16);
+        return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+      };
+      
+      ctx.shadowColor = hexToRgba(shadowColor, shadowOpacity / 100);
+      ctx.shadowBlur = shadowBlur;
+      ctx.shadowOffsetX = shadowOffsetX;
+      ctx.shadowOffsetY = shadowOffsetY;
+    }
+    
+    // Apply filters and opacity
     const filters = [
       `brightness(${brightness}%)`,
       `contrast(${contrast}%)`,
@@ -34,8 +65,10 @@ export const useVideoExport = ({
     ].filter(Boolean).join(' ');
     
     ctx.filter = filters;
+    ctx.globalAlpha = opacity / 100;
     ctx.drawImage(image, 0, 0, canvasDimensions.width, canvasDimensions.height);
-    ctx.filter = 'none';
+    
+    ctx.restore();
   };
 
   const drawMultiLineText = (
@@ -83,9 +116,9 @@ export const useVideoExport = ({
   const drawFrame = (ctx: CanvasRenderingContext2D, textOpacity: number, textScale: number) => {
     ctx.clearRect(0, 0, canvasDimensions.width, canvasDimensions.height);
 
-    // Layer 1: Original image (background) with filters
+    // Layer 1: Original image (background) with filters and transformations
     if (layerData.originalImage) {
-      applyImageFilters(ctx, layerData.originalImage);
+      applyImageFilters(ctx, layerData.originalImage, layerData.backgroundSettings);
     }
 
     // Layer 2: Text with animation
@@ -149,31 +182,9 @@ export const useVideoExport = ({
       ctx.restore();
     }
 
-    // Layer 3: Background-removed image (foreground) with optional drop shadow
+    // Layer 3: Background-removed image (foreground) with filters and transformations
     if (layerData.backgroundRemovedImage) {
-      ctx.save();
-      
-      // Apply drop shadow if enabled
-      if (layerData.backgroundSettings.dropShadowEnabled) {
-        const shadowOpacity = layerData.backgroundSettings.dropShadowOpacity / 100;
-        const shadowColor = layerData.backgroundSettings.dropShadowColor;
-        
-        // Convert hex color to rgba with opacity
-        const hexToRgba = (hex: string, alpha: number) => {
-          const r = parseInt(hex.slice(1, 3), 16);
-          const g = parseInt(hex.slice(3, 5), 16);
-          const b = parseInt(hex.slice(5, 7), 16);
-          return `rgba(${r}, ${g}, ${b}, ${alpha})`;
-        };
-        
-        ctx.shadowColor = hexToRgba(shadowColor, shadowOpacity);
-        ctx.shadowBlur = layerData.backgroundSettings.dropShadowBlur;
-        ctx.shadowOffsetX = layerData.backgroundSettings.dropShadowOffsetX;
-        ctx.shadowOffsetY = layerData.backgroundSettings.dropShadowOffsetY;
-      }
-      
-      ctx.drawImage(layerData.backgroundRemovedImage, 0, 0, canvasDimensions.width, canvasDimensions.height);
-      ctx.restore();
+      applyImageFilters(ctx, layerData.backgroundRemovedImage, layerData.subjectSettings);
     }
   };
 

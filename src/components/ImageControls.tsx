@@ -1,15 +1,22 @@
 import React, { useState } from 'react';
-import { BackgroundSettings } from '../types';
+import { BackgroundSettings, SubjectSettings } from '../types';
 import ImageSubTabNavigation from './ImageSubTabNavigation';
 import BackgroundControls from './BackgroundControls';
 import SubjectControls from './SubjectControls';
 
 interface ImageControlsProps {
   backgroundSettings: BackgroundSettings;
-  onUpdate: (updates: Partial<BackgroundSettings>) => void;
+  subjectSettings: SubjectSettings;
+  onUpdateBackground: (updates: Partial<BackgroundSettings>) => void;
+  onUpdateSubject: (updates: Partial<SubjectSettings>) => void;
 }
 
-const ImageControls: React.FC<ImageControlsProps> = ({ backgroundSettings, onUpdate }) => {
+const ImageControls: React.FC<ImageControlsProps> = ({ 
+  backgroundSettings, 
+  subjectSettings,
+  onUpdateBackground,
+  onUpdateSubject 
+}) => {
   const [imageSubTab, setImageSubTab] = useState<'background' | 'subject'>('background');
 
   return (
@@ -17,11 +24,17 @@ const ImageControls: React.FC<ImageControlsProps> = ({ backgroundSettings, onUpd
       <ImageSubTabNavigation imageSubTab={imageSubTab} setImageSubTab={setImageSubTab} />
 
       {imageSubTab === 'background' && (
-        <BackgroundControls backgroundSettings={backgroundSettings} onUpdate={onUpdate} />
+        <BackgroundControls 
+          backgroundSettings={backgroundSettings} 
+          onUpdate={onUpdateBackground} 
+        />
       )}
 
       {imageSubTab === 'subject' && (
-        <SubjectControls backgroundSettings={backgroundSettings} onUpdate={onUpdate} />
+        <SubjectControls 
+          subjectSettings={subjectSettings} 
+          onUpdate={onUpdateSubject} 
+        />
       )}
     </div>
   );
