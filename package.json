@@ -10,7 +10,6 @@
     "preview": "vite preview"
   },
   "dependencies": {
-    "@devadri/create-sticker": "^1.0.3",
     "@imgly/background-removal": "^1.4.5",
     "@sentry/react": "^7.99.0",
     "canvas-record": "^4.1.6",

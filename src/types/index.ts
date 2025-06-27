@@ -71,16 +71,6 @@ export interface SubjectSettings {
   // Transformations
   rotation: number;
   scale: number;
-  
-  // Sticker Effect
-  stickerEnabled: boolean;
-  stickerBorderWidth: number;
-  stickerBorderColor: string;
-  stickerShadowBlur: number;
-  stickerShadowColor: string;
-  stickerShadowOffsetX: number;
-  stickerShadowOffsetY: number;
-  stickerShadowOpacity: number;
 }
 
 export interface VideoSettings {
@@ -93,7 +83,6 @@ export interface VideoSettings {
 export interface LayerData {
   originalImage: HTMLImageElement | null;
   backgroundRemovedImage: HTMLImageElement | null;
-  stickerImage: HTMLImageElement | null;
   textSettings: TextSettings;
   backgroundSettings: BackgroundSettings;
   subjectSettings: SubjectSettings;

@@ -4,7 +4,6 @@ import { toast, Toaster } from 'sonner';
 import { useImageProcessing } from '../hooks/useImageProcessing';
 import { useVideoExport } from '../hooks/useVideoExport';
 import { useDragAndDrop } from '../hooks/useDragAndDrop';
-import { useStickerEffect } from '../hooks/useStickerEffect';
 import { LayerData } from '../types';
 import CanvasPreview from './CanvasPreview';
 import TabNavigation from './TabNavigation';
@@ -28,7 +27,6 @@ const ImageEditor: React.FC = () => {
   const [layerData, setLayerData] = useState<LayerData>({
     originalImage: null,
     backgroundRemovedImage: null,
-    stickerImage: null,
     textSettings: {
       text: 'Add your text here',
       fontSize: 48,
@@ -84,14 +82,6 @@ const ImageEditor: React.FC = () => {
       shadowOpacity: 100,
       rotation: 0,
       scale: 1,
-      stickerEnabled: false,
-      stickerBorderWidth: 5,
-      stickerBorderColor: '#ffffff',
-      stickerShadowBlur: 10,
-      stickerShadowColor: '#000000',
-      stickerShadowOffsetX: 5,
-      stickerShadowOffsetY: 5,
-      stickerShadowOpacity: 50,
     },
     videoSettings: {
       animationType: 'fade-in',
@@ -197,26 +187,6 @@ const ImageEditor: React.FC = () => {
     onExportError: (error: string) => {
       toast.error('Export failed', {
         id: 'export-progress',
-        description: error || 'Please try again.',
-        duration: 4000,
-      });
-    },
-  });
-
-  // Setup sticker effect hook
-  const { isProcessing: isStickerProcessing, createStickerFromImage } = useStickerEffect({
-    onStickerCreated: (stickerImage) => {
-      setLayerData(prev => ({
-        ...prev,
-        stickerImage
-      }));
-      toast.success('Sticker effect applied!', {
-        description: 'Your subject now has a beautiful sticker effect.',
-        duration: 3000,
-      });
-    },
-    onError: (error) => {
-      toast.error('Sticker creation failed', {
         description: error || 'Please try again.',
         duration: 4000,
       });
@@ -405,13 +375,8 @@ const ImageEditor: React.FC = () => {
     }
 
     // Layer 3: Background-removed image (foreground) with filters and transformations
-    // Use sticker image if sticker effect is enabled and available, otherwise use background-removed image
-    const subjectImage = layerData.subjectSettings.stickerEnabled && layerData.stickerImage 
-      ? layerData.stickerImage 
-      : layerData.backgroundRemovedImage;
-      
-    if (subjectImage) {
-      applyImageFilters(ctx, subjectImage, layerData.subjectSettings);
+    if (layerData.backgroundRemovedImage) {
+      applyImageFilters(ctx, layerData.backgroundRemovedImage, layerData.subjectSettings);
     }
   }, [layerData, canvasDimensions, animatedTextProps, editSubTab, isAnimationPlaying]);
 
@@ -464,38 +429,6 @@ const ImageEditor: React.FC = () => {
       ...prev,
       videoSettings: { ...prev.videoSettings, ...updates }
     }));
-  };
-
-  // Handle sticker creation
-  const handleCreateSticker = async () => {
-    if (!layerData.backgroundRemovedImage) {
-      toast.error('No subject image available', {
-        description: 'Please upload an image first.',
-        duration: 3000,
-      });
-      return;
-    }
-
-    toast.loading('Creating sticker effect...', {
-      id: 'sticker-progress',
-      description: 'Applying border and shadow effects to your subject',
-    });
-
-    try {
-      await createStickerFromImage(layerData.backgroundRemovedImage, {
-        borderWidth: layerData.subjectSettings.stickerBorderWidth,
-        borderColor: layerData.subjectSettings.stickerBorderColor,
-        shadowBlur: layerData.subjectSettings.stickerShadowBlur,
-        shadowColor: layerData.subjectSettings.stickerShadowColor,
-        shadowOffsetX: layerData.subjectSettings.stickerShadowOffsetX,
-        shadowOffsetY: layerData.subjectSettings.stickerShadowOffsetY,
-        shadowOpacity: layerData.subjectSettings.stickerShadowOpacity,
-      });
-      
-      toast.dismiss('sticker-progress');
-    } catch (error) {
-      toast.dismiss('sticker-progress');
-    }
   };
 
   const createAnimation = () => {
@@ -639,9 +572,6 @@ const ImageEditor: React.FC = () => {
           <span className="px-3 py-1 bg-green-500/20 rounded-full border border-green-400/30">
             📱 Drag & Drop Upload
           </span>
-          <span className="px-3 py-1 bg-orange-500/20 rounded-full border border-orange-400/30">
-            🏷️ Sticker Effects
-          </span>
         </div>
       </header>
 
@@ -706,8 +636,6 @@ const ImageEditor: React.FC = () => {
                     isAnimationPlaying={isAnimationPlaying}
                     playAnimation={playAnimation}
                     pauseAnimation={pauseAnimation}
-                    onCreateSticker={handleCreateSticker}
-                    isStickerProcessing={isStickerProcessing}
                   />
                 )}
 
@@ -729,7 +657,7 @@ const ImageEditor: React.FC = () => {
       <footer className="relative z-10 mt-16 py-12 px-4 border-t border-white/10">
         <div className="container mx-auto text-center">
           <h3 className="text-2xl font-bold mb-6 text-white">Why Choose BehindText for Your Text Behind Image Effects?</h3>
-          <div className="grid md:grid-cols-4 gap-8 mb-8">
+          <div className="grid md:grid-cols-3 gap-8 mb-8">
             <div className="p-6 bg-black/20 rounded-xl border border-white/10">
               <h4 className="text-lg font-semibold mb-3 text-blue-400">AI-Powered Background Removal</h4>
               <p className="text-gray-300 text-sm">
@@ -743,13 +671,7 @@ const ImageEditor: React.FC = () => {
               </p>
             </div>
             <div className="p-6 bg-black/20 rounded-xl border border-white/10">
-              <h4 className="text-lg font-semibold mb-3 text-pink-400">Sticker Effects</h4>
-              <p className="text-gray-300 text-sm">
-                Add beautiful sticker effects to your subjects with customizable borders, shadows, and colors to make them pop off the background.
-              </p>
-            </div>
-            <div className="p-6 bg-black/20 rounded-xl border border-white/10">
-              <h4 className="text-lg font-semibold mb-3 text-green-400">Export Options</h4>
+              <h4 className="text-lg font-semibold mb-3 text-pink-400">Export Options</h4>
               <p className="text-gray-300 text-sm">
                 Download your creations as high-quality images or animated videos. Perfect for social media, marketing, and creative projects.
               </p>

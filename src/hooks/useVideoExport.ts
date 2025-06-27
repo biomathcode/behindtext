@@ -183,13 +183,8 @@ export const useVideoExport = ({
     }
 
     // Layer 3: Background-removed image (foreground) with filters and transformations
-    // Use sticker image if sticker effect is enabled and available, otherwise use background-removed image
-    const subjectImage = layerData.subjectSettings.stickerEnabled && layerData.stickerImage 
-      ? layerData.stickerImage 
-      : layerData.backgroundRemovedImage;
-      
-    if (subjectImage) {
-      applyImageFilters(ctx, subjectImage, layerData.subjectSettings);
+    if (layerData.backgroundRemovedImage) {
+      applyImageFilters(ctx, layerData.backgroundRemovedImage, layerData.subjectSettings);
     }
   };
 
